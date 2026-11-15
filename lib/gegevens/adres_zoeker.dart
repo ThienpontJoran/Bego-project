@@ -1,7 +1,8 @@
-// Adressen opzoeken via OpenStreetMap.
-// - zoekSuggesties: suggesties terwijl je typt (dienst "Photon", gemaakt hiervoor).
-// - zoekAdres: één adres omzetten naar een plek (dienst "Nominatim"), als reserve.
-// Beide zijn gratis en bedoeld voor licht gebruik: prima om te testen.
+// Adressen opzoeken. We gebruiken drie gratis diensten:
+// 1. Vlaamse overheid (Digitaal Vlaanderen): officieel adressenregister, heel nauwkeurig,
+//    maar alleen Vlaanderen. Dit proberen we altijd eerst.
+// 2. Photon (OpenStreetMap): suggesties voor adressen buiten Vlaanderen.
+// 3. Nominatim (OpenStreetMap): laatste redmiddel bij het opslaan.
 
 import 'dart:convert';
 
@@ -12,12 +13,61 @@ import 'package:latlong2/latlong.dart';
 class AdresSuggestie {
   String tekst; // bv. "Markt 12, 9700 Oudenaarde"
   String naam; // bv. de naam van een winkel op dat adres (mag leeg zijn)
-  LatLng plaats;
+  LatLng? plaats; // null = plek nog niet gekend (wordt opgezocht als je erop klikt)
 
   AdresSuggestie(this.tekst, this.naam, this.plaats);
 }
 
+// Suggesties terwijl je typt: eerst Vlaanderen, en als dat niets geeft, Photon.
 Future<List<AdresSuggestie>> zoekSuggesties(String tekst) async {
+  List<AdresSuggestie> suggesties = await suggestiesVlaanderen(tekst);
+  if (suggesties.isEmpty) {
+    suggesties = await suggestiesPhoton(tekst);
+  }
+  return suggesties;
+}
+
+// ---------- Vlaamse overheid ----------
+
+// Geeft alleen teksten terug (zonder plek). De plek vragen we pas op als je klikt.
+Future<List<AdresSuggestie>> suggestiesVlaanderen(String tekst) async {
+  List<AdresSuggestie> suggesties = [];
+  try {
+    Uri url = Uri.https('geo.api.vlaanderen.be', '/geolocation/v4/Suggestion', {'q': tekst, 'c': '8'});
+    http.Response antwoord = await http.get(url);
+    if (antwoord.statusCode != 200) return suggesties;
+
+    Map<String, dynamic> gegevens = jsonDecode(antwoord.body);
+    for (dynamic adres in gegevens['SuggestionResult']) {
+      suggesties.add(AdresSuggestie(adres, '', null));
+    }
+  } catch (fout) {
+    // Geen internet of iets anders mis: dan gewoon geen suggesties.
+  }
+  return suggesties;
+}
+
+// Zoekt de exacte plek van een adres in het Vlaamse adressenregister.
+Future<LatLng?> plekVlaanderen(String adres) async {
+  try {
+    Uri url = Uri.https('geo.api.vlaanderen.be', '/geolocation/v4/Location', {'q': adres, 'c': '1'});
+    http.Response antwoord = await http.get(url);
+    if (antwoord.statusCode != 200) return null;
+
+    Map<String, dynamic> gegevens = jsonDecode(antwoord.body);
+    List resultaten = gegevens['LocationResult'];
+    if (resultaten.isEmpty) return null;
+
+    Map<String, dynamic> plek = resultaten[0]['Location'];
+    return LatLng(plek['Lat_WGS84'].toDouble(), plek['Lon_WGS84'].toDouble());
+  } catch (fout) {
+    return null;
+  }
+}
+
+// ---------- Photon (buiten Vlaanderen) ----------
+
+Future<List<AdresSuggestie>> suggestiesPhoton(String tekst) async {
   List<AdresSuggestie> suggesties = [];
   try {
     Uri url = Uri.https('photon.komoot.io', '/api/', {
@@ -81,10 +131,16 @@ String maakAdresTekst(Map<String, dynamic> info) {
   return '$eersteDeel, $tweedeDeel';
 }
 
-// Probeert eerst het volledige adres. Lukt dat niet, dan enkel postcode + gemeente
-// (het stuk na de laatste komma). Geeft null als niets gevonden werd.
+// ---------- Eén adres omzetten naar een plek ----------
+
+// Probeert eerst Vlaanderen, dan Nominatim met het volledige adres,
+// en tot slot enkel postcode + gemeente (het stuk na de laatste komma).
+// Geeft null als niets gevonden werd.
 Future<LatLng?> zoekAdres(String adres) async {
-  LatLng? plaats = await vraagNominatim(adres);
+  LatLng? plaats = await plekVlaanderen(adres);
+  if (plaats != null) return plaats;
+
+  plaats = await vraagNominatim(adres);
   if (plaats == null && adres.contains(',')) {
     String gemeente = adres.substring(adres.lastIndexOf(',') + 1);
     plaats = await vraagNominatim(gemeente);

@@ -87,7 +87,7 @@ class _ContactFormulierState extends State<ContactFormulier> {
     Contact? bestaand = widget.bestaand;
     String adresTekst = adres.text.trim();
     LatLng? plaats;
-    if (gekozenAdres != null && gekozenAdres!.tekst == adresTekst) {
+    if (gekozenAdres != null && gekozenAdres!.tekst == adresTekst && gekozenAdres!.plaats != null) {
       plaats = gekozenAdres!.plaats;
     } else if (bestaand != null && bestaand.adres == adresTekst) {
       plaats = bestaand.plaats;

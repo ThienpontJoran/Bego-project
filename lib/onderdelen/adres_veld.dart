@@ -20,6 +20,21 @@ class _AdresVeldState extends State<AdresVeld> {
   FocusNode focus = FocusNode();
   int zoekNummer = 0; // om oude zoekopdrachten te negeren
   AdresSuggestie? gekozen;
+  bool bezig = false; // true terwijl we de plek van de gekozen suggestie opzoeken
+
+  // Klik op een suggestie: zoek (indien nodig) de exacte plek op.
+  Future<void> kies(AdresSuggestie suggestie) async {
+    setState(() {
+      gekozen = suggestie;
+      bezig = true;
+    });
+    if (suggestie.plaats == null) {
+      suggestie.plaats = await zoekAdres(suggestie.tekst);
+    }
+    if (!mounted) return;
+    setState(() => bezig = false);
+    widget.onGekozen(suggestie);
+  }
 
   // Wordt opgeroepen telkens de tekst verandert.
   Future<List<AdresSuggestie>> suggesties(TextEditingValue waarde) async {
@@ -46,16 +61,19 @@ class _AdresVeldState extends State<AdresVeld> {
       focusNode: focus,
       optionsBuilder: suggesties,
       displayStringForOption: (suggestie) => suggestie.tekst,
-      onSelected: (suggestie) {
-        setState(() => gekozen = suggestie);
-        widget.onGekozen(suggestie);
-      },
+      onSelected: kies,
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
         String hulptekst = 'Begin te typen en kies een suggestie';
         Widget? vinkje;
         if (gekozen != null && gekozen!.tekst == controller.text.trim()) {
-          hulptekst = 'Locatie gevonden';
-          vinkje = const Icon(Icons.check_circle, color: Color(0xFF2E7D32));
+          if (bezig) {
+            hulptekst = 'Locatie zoeken...';
+          } else if (gekozen!.plaats != null) {
+            hulptekst = 'Locatie gevonden';
+            vinkje = const Icon(Icons.check_circle, color: Color(0xFF2E7D32));
+          } else {
+            hulptekst = 'Locatie niet gevonden, controleer het adres';
+          }
         }
         return TextFormField(
           controller: controller,
