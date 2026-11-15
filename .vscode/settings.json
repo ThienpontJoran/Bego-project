@@ -1,0 +1,14 @@
+{
+  // Verberg mappen die Flutter zelf aanmaakt; daar hoef je nooit in te werken.
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/build": true,
+    "**/.idea": true,
+    "**/*.iml": true,
+    "**/.flutter-plugins-dependencies": true,
+    ".flutter": true,
+    ".metadata": true
+  },
+  // Gebruik de Flutter SDK uit deze projectmap.
+  "dart.flutterSdkPath": ".flutter"
+}

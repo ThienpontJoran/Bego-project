@@ -1,0 +1,10 @@
+# Regels die VS Code gebruikt om tips en waarschuwingen te geven over je code.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Verbergt een verwarrende melding over package:flutter/material.dart.
+    deprecated_member_use: ignore
+  exclude:
+    - build/**
+    - web/**

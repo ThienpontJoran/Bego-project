@@ -1,6 +1,13 @@
 # Lokale Flutter SDK (zoals een .venv)
 .flutter/
 
+# Bestanden die Flutter zelf aanmaakt
+.dart_tool/
+build/
+.idea/
+*.iml
+.flutter-plugins-dependencies
+
 # Documenten blijven lokaal (repo is publiek)
 *.pdf
 bego-netwerkkaart.md
