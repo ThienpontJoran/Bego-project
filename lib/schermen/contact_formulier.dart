@@ -6,8 +6,10 @@ import 'package:latlong2/latlong.dart';
 import '../gegevens/adres_zoeker.dart';
 import '../gegevens/contact.dart';
 import '../gegevens/opslag.dart';
+import '../onderdelen/adres_veld.dart';
 import '../onderdelen/interesse_kiezer.dart';
 import '../onderdelen/kopje.dart';
+import '../onderdelen/merken_kiezer.dart';
 import '../onderdelen/vorm.dart';
 import 'partner_kiezer.dart';
 import 'venster.dart';
@@ -32,9 +34,10 @@ class _ContactFormulierState extends State<ContactFormulier> {
   TextEditingController adres = TextEditingController();
   TextEditingController telefoon = TextEditingController();
   TextEditingController email = TextEditingController();
-  TextEditingController merken = TextEditingController();
   TextEditingController opmerking = TextEditingController();
 
+  List<String> merken = [];
+  AdresSuggestie? gekozenAdres; // de suggestie die aangeklikt werd (met plek op de kaart)
   Soort soort = Soort.tandarts;
   Interesse interesse = Interesse.nietBenaderd;
   List<Contact> partners = [];
@@ -59,7 +62,7 @@ class _ContactFormulierState extends State<ContactFormulier> {
     adres.text = bestaand.adres;
     telefoon.text = bestaand.telefoon;
     email.text = bestaand.email;
-    merken.text = bestaand.merken.join(', ');
+    merken = List.of(bestaand.merken); // een kopie, zodat "Annuleren" niets verandert
     opmerking.text = bestaand.opmerking;
     partners = opslag.partnersVan(bestaand);
   }
@@ -77,13 +80,19 @@ class _ContactFormulierState extends State<ContactFormulier> {
       foutmelding = '';
     });
 
-    // Adres omzetten naar een plek op de kaart (alleen als het nieuw of veranderd is).
+    // Adres omzetten naar een plek op de kaart:
+    // 1. een aangeklikte suggestie heeft al een plek;
+    // 2. een ongewijzigd adres houdt zijn plek;
+    // 3. anders zoeken we het adres op.
     Contact? bestaand = widget.bestaand;
+    String adresTekst = adres.text.trim();
     LatLng? plaats;
-    if (bestaand != null && bestaand.adres == adres.text.trim()) {
+    if (gekozenAdres != null && gekozenAdres!.tekst == adresTekst) {
+      plaats = gekozenAdres!.plaats;
+    } else if (bestaand != null && bestaand.adres == adresTekst) {
       plaats = bestaand.plaats;
     } else {
-      plaats = await zoekAdres(adres.text.trim());
+      plaats = await zoekAdres(adresTekst);
     }
 
     // Na een "await" kan het scherm intussen gesloten zijn; dan stoppen we.
@@ -95,12 +104,6 @@ class _ContactFormulierState extends State<ContactFormulier> {
         foutmelding = 'Adres niet gevonden. Controleer straat, nummer, postcode en gemeente.';
       });
       return;
-    }
-
-    // "Straumann, Nobel Biocare" -> ["Straumann", "Nobel Biocare"]
-    List<String> merkenLijst = [];
-    for (String merk in merken.text.split(',')) {
-      if (merk.trim() != '') merkenLijst.add(merk.trim());
     }
 
     Contact contact;
@@ -117,7 +120,7 @@ class _ContactFormulierState extends State<ContactFormulier> {
     contact.plaats = plaats;
     contact.telefoon = telefoon.text.trim();
     contact.email = email.text.trim();
-    contact.merken = merkenLijst;
+    contact.merken = merken;
     contact.interesse = interesse;
     contact.opmerking = opmerking.text.trim();
 
@@ -190,15 +193,10 @@ class _ContactFormulierState extends State<ContactFormulier> {
         decoration: const InputDecoration(labelText: 'Praktijk / bedrijfsnaam', hintText: 'Tandartspraktijk De Linde'),
       ),
       const SizedBox(height: 12),
-      TextFormField(
+      AdresVeld(
         controller: adres,
-        decoration: const InputDecoration(
-          labelText: 'Adres *',
-          hintText: 'Markt 12, 9700 Oudenaarde',
-          helperText: 'Wordt automatisch op de kaart gezet',
-          prefixIcon: Icon(Icons.place_outlined),
-        ),
         validator: verplicht,
+        onGekozen: (suggestie) => gekozenAdres = suggestie,
       ),
       const SizedBox(height: 12),
       TextFormField(
@@ -210,15 +208,8 @@ class _ContactFormulierState extends State<ContactFormulier> {
         controller: email,
         decoration: const InputDecoration(labelText: 'E-mail', prefixIcon: Icon(Icons.mail_outline)),
       ),
-      const SizedBox(height: 12),
-      TextFormField(
-        controller: merken,
-        decoration: const InputDecoration(
-          labelText: 'Huidig implantaatmerk',
-          hintText: 'Straumann, Nobel Biocare',
-          helperText: 'Meerdere merken scheiden met een komma',
-        ),
-      ),
+      kopje(context, 'Huidig implantaatmerk'),
+      MerkenKiezer(merken: merken),
       kopje(context, 'Interesse in Bego *'),
       InteresseKiezer(waarde: interesse, onKies: (keuze) => setState(() => interesse = keuze)),
       kopje(context, 'Verbonden met'),

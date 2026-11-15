@@ -29,9 +29,6 @@ class DetailPaneel extends StatelessWidget {
     delen.add(const SizedBox(height: 16));
     delen.add(actieknoppen(context));
 
-    Widget? argument = overtuigingsArgument(partners);
-    if (argument != null) delen.add(argument);
-
     delen.add(sectie(context, 'Contactgegevens', contactgegevens()));
     delen.add(sectie(context, 'Bego', begoGegevens()));
     delen.add(sectie(context, 'Partners', partnerRegels(context, partners)));
@@ -102,39 +99,6 @@ class DetailPaneel extends StatelessWidget {
         label: const Text('Partner'),
       ),
     ]);
-  }
-
-  // "Dr. Peeters en Dentalab werken al met Bego" - handig tijdens het gesprek.
-  Widget? overtuigingsArgument(List<Contact> partners) {
-    if (contact.interesse == Interesse.gebruiktBego) return null;
-    List<String> namen = [];
-    for (Contact partner in partners) {
-      if (partner.interesse == Interesse.gebruiktBego) namen.add(partner.naam);
-    }
-    if (namen.isEmpty) return null;
-
-    String werkwoord = 'werkt';
-    if (namen.length > 1) werkwoord = 'werken';
-
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2E7D32).withValues(alpha: 0.3)),
-      ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.lightbulb_outline, color: Color(0xFF2E7D32)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Argument voor je gesprek', style: TextStyle(fontWeight: FontWeight.w700)),
-            Text('${namenOpsomming(namen)} $werkwoord al met Bego.'),
-          ]),
-        ),
-      ]),
-    );
   }
 
   // ---------- Secties ----------

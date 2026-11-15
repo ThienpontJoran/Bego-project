@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bego_netwerkkaart/gegevens/adres_zoeker.dart';
 import 'package:bego_netwerkkaart/gegevens/contact.dart';
 import 'package:bego_netwerkkaart/gegevens/hulpfuncties.dart';
 import 'package:bego_netwerkkaart/gegevens/keten.dart';
@@ -46,6 +47,40 @@ void main() {
     opslag.voegBezoekToe(maes, Bezoek(datum: DateTime.now(), soort: Contactmoment.bezoek, interesseNa: Interesse.gebruiktBego));
     expect(maes.interesse, Interesse.gebruiktBego);
     expect(maes.langNietBezocht, false);
+  });
+
+  test('adres netjes opmaken uit een suggestie', () {
+    Map<String, dynamic> huis = {
+      'type': 'house', 'street': 'Grote Markt - Grand-Place', 'housenumber': '12',
+      'postcode': '9600', 'city': 'Ronse - Renaix',
+    };
+    expect(maakAdresTekst(huis), 'Grote Markt 12, 9600 Ronse');
+    Map<String, dynamic> straat = {'type': 'street', 'name': 'Stationsstraat', 'postcode': '9620', 'city': 'Zottegem'};
+    expect(maakAdresTekst(straat), 'Stationsstraat, 9620 Zottegem');
+  });
+
+  testWidgets('merken: bestaande merken als suggestie, nieuw merk toevoegen', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    await tester.pumpWidget(const BegoApp());
+    await tester.tap(find.text('Nieuw'));
+    await tester.pumpAndSettle();
+
+    Finder merkVeld = find.widgetWithText(TextField, 'Huidig implantaatmerk');
+    await tester.ensureVisible(merkVeld);
+    await tester.enterText(merkVeld, 'strau');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Straumann'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(InputChip, 'Straumann'), findsOneWidget);
+
+    await tester.enterText(merkVeld, 'Osstem');
+    await tester.pumpAndSettle();
+    expect(find.text('Nieuw merk toevoegen: "Osstem"'), findsOneWidget);
+    await tester.tap(find.text('Nieuw merk toevoegen: "Osstem"'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(InputChip, 'Osstem'), findsOneWidget);
+    tester.view.reset();
   });
 
   testWidgets('gsm: app start op met tabbladen', (tester) async {

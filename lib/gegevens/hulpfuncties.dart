@@ -41,14 +41,6 @@ String gemeenteVan(String adres) {
   return woorden.join(' ');
 }
 
-// ["An", "Tom", "Lies"] -> "An, Tom en Lies"
-String namenOpsomming(List<String> namen) {
-  if (namen.isEmpty) return '';
-  if (namen.length == 1) return namen[0];
-  String begin = namen.sublist(0, namen.length - 1).join(', ');
-  return '$begin en ${namen.last}';
-}
-
 // Maakt tekst klaar om te zoeken: kleine letters, geen accenten
 // en geen dubbele letters. Zo vindt "peters" ook "Peeters".
 String maakZoekbaar(String tekst) {
