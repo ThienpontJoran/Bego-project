@@ -1,0 +1,6 @@
+# Lokale Flutter SDK (zoals een .venv)
+.flutter/
+
+# Documenten blijven lokaal (repo is publiek)
+*.pdf
+bego-netwerkkaart.md
