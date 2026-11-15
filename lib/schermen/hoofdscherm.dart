@@ -1,0 +1,368 @@
+// Het hoofdscherm.
+// Laptop (breed): zijbalk links, kaart in het midden, detailpaneel rechts.
+// Gsm (smal): tabbladen onderaan (Kaart, Contacten, Ketens, Opvolging).
+
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+
+import '../gegevens/contact.dart';
+import '../gegevens/filters.dart';
+import '../gegevens/keten.dart';
+import '../gegevens/opslag.dart';
+import '../onderdelen/contactenlijst.dart';
+import '../onderdelen/detail_paneel.dart';
+import '../onderdelen/kaart.dart';
+import '../onderdelen/ketenlijst.dart';
+import '../onderdelen/opvolglijst.dart';
+import '../onderdelen/vorm.dart';
+import 'contact_formulier.dart';
+import 'detail_pagina.dart';
+import 'filter_venster.dart';
+import 'venster.dart';
+
+class Hoofdscherm extends StatefulWidget {
+  const Hoofdscherm({super.key});
+
+  @override
+  State<Hoofdscherm> createState() => _HoofdschermState();
+}
+
+class _HoofdschermState extends State<Hoofdscherm> {
+  Contact? gekozen; // het aangeklikte contact (null = niemand)
+  Filters filters = Filters();
+  int tabblad = 0; // laptop: 0 = contacten, 1 = ketens, 2 = opvolging
+  int mobielTabblad = 0; // gsm: 0 = kaart, 1 = contacten, 2 = ketens, 3 = opvolging
+  MapController kaartController = MapController();
+  TextEditingController zoekController = TextEditingController();
+
+  bool isBreed() {
+    return MediaQuery.of(context).size.width >= 900;
+  }
+
+  // ---------- Acties ----------
+
+  // Klik op een contact op de kaart (of naast een contact: null).
+  void kiesOpKaart(Contact? contact) {
+    setState(() => gekozen = contact);
+    if (contact != null && !isBreed()) openDetailPagina(contact);
+  }
+
+  // Klik op een contact in een lijst: kies het en zoom ernaartoe.
+  void kiesUitLijst(Contact contact) {
+    setState(() => gekozen = contact);
+    if (isBreed()) {
+      zoomNaar(contact);
+    } else {
+      openDetailPagina(contact);
+    }
+  }
+
+  void zoomNaar(Contact contact) {
+    double zoom = kaartController.camera.zoom;
+    if (zoom < 11) zoom = 11;
+    kaartController.move(contact.plaats, zoom);
+  }
+
+  Future<void> openDetailPagina(Contact contact) async {
+    dynamic resultaat = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => DetailPagina(contact: contact)),
+    );
+    // De pagina geeft een contact terug als je op "Op kaart" klikt.
+    if (resultaat is Contact) {
+      setState(() {
+        gekozen = resultaat;
+        mobielTabblad = 0;
+      });
+      zoomNaar(resultaat);
+    }
+  }
+
+  Future<void> nieuwContact() async {
+    dynamic nieuw = await toonVenster(context, const ContactFormulier());
+    if (nieuw is Contact) kiesUitLijst(nieuw);
+  }
+
+  Future<void> openFilters() async {
+    await toonVenster(context, FilterVenster(filters: filters));
+    setState(() {}); // filters kunnen veranderd zijn: scherm opnieuw tekenen
+  }
+
+  void zoekVeranderd(String tekst) {
+    setState(() {
+      filters.zoekterm = tekst;
+      tabblad = 0; // toon de zoekresultaten
+    });
+  }
+
+  // ---------- Welke contacten tonen we? ----------
+
+  List<Contact> gefilterdeContacten() {
+    List<Contact> resultaat = [];
+    for (Contact contact in opslag.contacten) {
+      if (filters.laatZien(contact)) resultaat.add(contact);
+    }
+    return resultaat;
+  }
+
+  // Op de kaart tonen we ook altijd het gekozen contact en zijn partners.
+  List<Contact> kaartContacten() {
+    List<Contact> resultaat = gefilterdeContacten();
+    Contact? g = gekozen;
+    if (g != null) {
+      if (!resultaat.contains(g)) resultaat.add(g);
+      for (Contact partner in opslag.partnersVan(g)) {
+        if (!resultaat.contains(partner)) resultaat.add(partner);
+      }
+    }
+    return resultaat;
+  }
+
+  // ---------- Opbouw van het scherm ----------
+
+  @override
+  Widget build(BuildContext context) {
+    // Teken opnieuw zodra er iets in de opslag verandert (contact toegevoegd, bezoek...).
+    return ListenableBuilder(
+      listenable: opslag,
+      builder: (context, child) {
+        // Is het gekozen contact intussen verwijderd? Dan is er niets meer gekozen.
+        if (gekozen != null && !opslag.contacten.contains(gekozen)) gekozen = null;
+
+        if (isBreed()) return breedScherm();
+        return smalScherm();
+      },
+    );
+  }
+
+  Widget breedScherm() {
+    List<Widget> kolommen = [
+      SizedBox(width: 380, child: zijbalk()),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+          child: Card(clipBehavior: Clip.antiAlias, child: kaart(true)),
+        ),
+      ),
+    ];
+
+    if (gekozen != null) {
+      kolommen.add(SizedBox(
+        width: 420,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            child: DetailPaneel(
+              contact: gekozen!,
+              onKiesPartner: kiesUitLijst,
+              onSluiten: () => kiesOpKaart(null),
+            ),
+          ),
+        ),
+      ));
+    }
+
+    return Scaffold(body: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: kolommen));
+  }
+
+  Widget smalScherm() {
+    Widget kaartTab = Stack(children: [
+      kaart(false),
+      Positioned(top: 12, left: 12, right: 76, child: zoekKnopMobiel()),
+    ]);
+
+    Widget contactenTab = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SizedBox(height: 12),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: zoekveld()),
+      Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 4), child: soortKnoppen()),
+      Expanded(child: lijstVoorTabblad(0)),
+    ]);
+
+    return Scaffold(
+      body: SafeArea(
+        // IndexedStack: alle tabbladen blijven bestaan, maar je ziet er maar één.
+        child: IndexedStack(index: mobielTabblad, children: [
+          kaartTab,
+          contactenTab,
+          lijstVoorTabblad(1),
+          lijstVoorTabblad(2),
+        ]),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: nieuwContact,
+        icon: const Icon(Icons.add),
+        label: const Text('Nieuw contact'),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: mobielTabblad,
+        onDestinationSelected: (nummer) => setState(() => mobielTabblad = nummer),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Kaart'),
+          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Contacten'),
+          NavigationDestination(icon: Icon(Icons.hub_outlined), selectedIcon: Icon(Icons.hub), label: 'Ketens'),
+          NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: 'Opvolging'),
+        ],
+      ),
+    );
+  }
+
+  Widget kaart(bool legendeOpen) {
+    return Kaart(
+      controller: kaartController,
+      contacten: kaartContacten(),
+      gekozen: gekozen,
+      onKies: kiesOpKaart,
+      legendeOpen: legendeOpen,
+    );
+  }
+
+  Widget zijbalk() {
+    // Aantallen voor op de tabbladen.
+    int aantalBijna = 0;
+    for (Keten keten in opslag.ketens) {
+      if (keten.status == KetenStatus.bijna) aantalBijna++;
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
+        child: Row(children: [
+          logo(),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Bego Netwerkkaart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Text('Testversie · voorbeeldgegevens', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ]),
+          ),
+          FilledButton.icon(onPressed: nieuwContact, icon: const Icon(Icons.add), label: const Text('Nieuw')),
+        ]),
+      ),
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: zoekveld()),
+      Padding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 12), child: soortKnoppen()),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: SegmentedButton<int>(
+          showSelectedIcon: false,
+          segments: [
+            const ButtonSegment(value: 0, label: Text('Contacten')),
+            ButtonSegment(value: 1, label: Text('Ketens ($aantalBijna)')),
+            const ButtonSegment(value: 2, label: Text('Opvolging')),
+          ],
+          selected: {tabblad},
+          onSelectionChanged: (keuze) => setState(() => tabblad = keuze.first),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Expanded(child: lijstVoorTabblad(tabblad)),
+    ]);
+  }
+
+  Widget lijstVoorTabblad(int nummer) {
+    if (nummer == 1) return KetenLijst(onKies: kiesUitLijst);
+    if (nummer == 2) return OpvolgLijst(onKies: kiesUitLijst);
+    return ContactenLijst(contacten: gefilterdeContacten(), gekozen: gekozen, onKies: kiesUitLijst);
+  }
+
+  Widget logo() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(Icons.hub, color: Theme.of(context).colorScheme.onPrimary),
+    );
+  }
+
+  Widget zoekveld() {
+    Widget? wisKnop;
+    if (filters.zoekterm != '') {
+      wisKnop = IconButton(
+        tooltip: 'Wissen',
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          zoekController.clear();
+          zoekVeranderd('');
+        },
+      );
+    }
+
+    return Row(children: [
+      Expanded(
+        child: TextField(
+          controller: zoekController,
+          onChanged: zoekVeranderd,
+          decoration: InputDecoration(
+            hintText: 'Zoek naam, gemeente, merk...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: wisKnop,
+          ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Badge(
+        isLabelVisible: filters.aantalActief > 0,
+        label: Text('${filters.aantalActief}'),
+        child: IconButton.filledTonal(
+          tooltip: 'Filters',
+          onPressed: openFilters,
+          icon: const Icon(Icons.tune),
+        ),
+      ),
+    ]);
+  }
+
+  // Drie knoppen: alleen chirurgen, tandartsen of labo's tonen.
+  Widget soortKnoppen() {
+    List<Widget> knoppen = [];
+    for (Soort soort in Soort.values) {
+      knoppen.add(FilterChip(
+        showCheckmark: false,
+        visualDensity: VisualDensity.compact,
+        avatar: Vorm(soort: soort, kleur: Colors.blueGrey, grootte: 13),
+        label: Text(soortMeervoud(soort)),
+        selected: filters.soorten.contains(soort),
+        onSelected: (aan) {
+          setState(() {
+            if (aan) {
+              filters.soorten.add(soort);
+            } else {
+              filters.soorten.remove(soort);
+            }
+          });
+        },
+      ));
+    }
+    return Wrap(spacing: 6, runSpacing: 6, children: knoppen);
+  }
+
+  // Op de gsm: een zoekbalk op de kaart die naar het tabblad Contacten springt.
+  Widget zoekKnopMobiel() {
+    return Material(
+      elevation: 3,
+      borderRadius: BorderRadius.circular(28),
+      color: Theme.of(context).colorScheme.surface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: () => setState(() => mobielTabblad = 1),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(children: [
+            Icon(Icons.search),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Zoek een contact...',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}

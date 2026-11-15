@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import 'contact.dart';
+import '../gegevens/contact.dart';
 
 class Vorm extends StatelessWidget {
   final Soort soort;
@@ -21,17 +21,20 @@ class Vorm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // De rand: dik en blauw als het contact aangeklikt is.
-    Border rand = Border.all(color: Colors.black87, width: 1);
+    // Rand: wit, of dik en donker als het contact aangeklikt is.
+    Border rand = Border.all(color: Colors.white, width: 2);
     if (geselecteerd) {
-      rand = Border.all(color: Colors.blue.shade800, width: 3);
+      rand = Border.all(color: const Color(0xFF263238), width: 3);
     }
+    List<BoxShadow> schaduw = [
+      BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 3, offset: const Offset(0, 1)),
+    ];
 
     if (soort == Soort.chirurg) {
       return Container(
         width: grootte,
         height: grootte,
-        decoration: BoxDecoration(color: kleur, shape: BoxShape.circle, border: rand),
+        decoration: BoxDecoration(color: kleur, shape: BoxShape.circle, border: rand, boxShadow: schaduw),
       );
     }
 
@@ -39,7 +42,12 @@ class Vorm extends StatelessWidget {
       return Container(
         width: grootte,
         height: grootte,
-        decoration: BoxDecoration(color: kleur, border: rand),
+        decoration: BoxDecoration(
+          color: kleur,
+          border: rand,
+          boxShadow: schaduw,
+          borderRadius: BorderRadius.circular(grootte / 6),
+        ),
       );
     }
 
@@ -65,16 +73,19 @@ class DriehoekTekenaar extends CustomPainter {
     driehoek.lineTo(0, size.height); // linksonder
     driehoek.close();
 
+    canvas.drawShadow(driehoek, Colors.black, 2, false);
+
     Paint vulling = Paint();
     vulling.color = kleur;
     canvas.drawPath(driehoek, vulling);
 
     Paint rand = Paint();
     rand.style = PaintingStyle.stroke;
-    rand.color = Colors.black87;
-    rand.strokeWidth = 1;
+    rand.strokeJoin = StrokeJoin.round;
+    rand.color = Colors.white;
+    rand.strokeWidth = 2;
     if (geselecteerd) {
-      rand.color = Colors.blue.shade800;
+      rand.color = const Color(0xFF263238);
       rand.strokeWidth = 3;
     }
     canvas.drawPath(driehoek, rand);

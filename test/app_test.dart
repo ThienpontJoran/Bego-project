@@ -3,18 +3,103 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bego_netwerkkaart/contact.dart';
+import 'package:bego_netwerkkaart/gegevens/contact.dart';
+import 'package:bego_netwerkkaart/gegevens/hulpfuncties.dart';
+import 'package:bego_netwerkkaart/gegevens/keten.dart';
+import 'package:bego_netwerkkaart/gegevens/opslag.dart';
 import 'package:bego_netwerkkaart/main.dart';
-import 'package:bego_netwerkkaart/testgegevens.dart';
+
+Contact zoek(String naam) {
+  return opslag.contacten.firstWhere((contact) => contact.naam == naam);
+}
 
 void main() {
-  test('partners werken in beide richtingen', () {
-    List<Contact> partners = zoekPartners(peeters, alleRelaties);
-    expect(partners, containsAll([janssens, dentalab, deVos]));
+  test('zoeken negeert hoofdletters, accenten en dubbele letters', () {
+    Contact peeters = zoek('Dr. An Peeters');
+    expect(pastBijZoekterm(peeters, 'peters'), true);
+    expect(pastBijZoekterm(peeters, 'OUDENAARDE'), true);
+    expect(pastBijZoekterm(peeters, 'Kortrijk'), false);
   });
 
-  testWidgets('app start met titel', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: KaartPagina()));
-    expect(find.text('Bego Netwerkkaart – testversie'), findsOneWidget);
+  test('gemeente uit een adres halen', () {
+    expect(gemeenteVan('Markt 12, 9700 Oudenaarde'), 'Oudenaarde');
+  });
+
+  test('partners werken in beide richtingen', () {
+    List<Contact> partners = opslag.partnersVan(zoek('Labo Dentalab'));
+    expect(partners, contains(zoek('Dr. An Peeters')));
+  });
+
+  test('ketens krijgen de juiste status', () {
+    int volledig = 0;
+    int bijna = 0;
+    for (Keten keten in opslag.ketens) {
+      if (keten.status == KetenStatus.volledig) volledig++;
+      if (keten.status == KetenStatus.bijna) bijna++;
+    }
+    expect(volledig, 1);
+    expect(bijna, 3);
+  });
+
+  test('een bezoek past de interesse aan', () {
+    Contact maes = zoek('Dr. Tom Maes');
+    opslag.voegBezoekToe(maes, Bezoek(datum: DateTime.now(), soort: Contactmoment.bezoek, interesseNa: Interesse.gebruiktBego));
+    expect(maes.interesse, Interesse.gebruiktBego);
+    expect(maes.langNietBezocht, false);
+  });
+
+  testWidgets('gsm: app start op met tabbladen', (tester) async {
+    tester.view.physicalSize = const Size(400, 850);
+    tester.view.devicePixelRatio = 1;
+    await tester.pumpWidget(const BegoApp());
+    expect(find.text('Opvolging'), findsOneWidget);
+
+    await tester.tap(find.text('Contacten'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dr. An Peeters'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bezoek noteren'), findsOneWidget);
+
+    await tester.tap(find.text('Bewerken'));
+    await tester.pumpAndSettle();
+    expect(find.text('Contact bewerken'), findsOneWidget);
+    tester.view.reset();
+  });
+
+  testWidgets('laptop: detailpaneel en formulieren openen', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    await tester.pumpWidget(const BegoApp());
+
+    await tester.tap(find.text('Dr. An Peeters'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bezoek noteren'), findsOneWidget);
+
+    await tester.tap(find.text('Bezoek noteren'));
+    await tester.pumpAndSettle();
+    expect(find.text('Soort contact'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close).last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Partner'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kies een partner'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close).last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.tune));
+    await tester.pumpAndSettle();
+    expect(find.text('Toon resultaten'), findsOneWidget);
+    await tester.tap(find.text('Toon resultaten'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ketens (3)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ontbreekt'), findsWidgets);
+
+    await tester.tap(find.text('Opvolging'));
+    await tester.pumpAndSettle();
+    expect(find.text('Offerte sturen'), findsOneWidget);
+    tester.view.reset();
   });
 }

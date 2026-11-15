@@ -1,4 +1,4 @@
-﻿# Projectinstellingen: naam en welke pakketten de app gebruikt.
+# Projectinstellingen: naam en welke pakketten de app gebruikt.
 name: bego_netwerkkaart
 description: "Bego Netwerkkaart"
 publish_to: 'none'
@@ -14,6 +14,9 @@ dependencies:
   material_ui: ^1.1.0
   flutter_map: ^8.3.2 # de kaart
   latlong2: ^0.10.1 # coördinaten (breedtegraad, lengtegraad)
+  http: ^1.6.0
+  flutter_localizations:
+    sdk: flutter
 
 # Pakketten die je alleen nodig hebt tijdens het programmeren
 dev_dependencies:
