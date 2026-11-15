@@ -8,3 +8,8 @@ analyzer:
   exclude:
     - build/**
     - web/**
+
+linter:
+  rules:
+    # Een gewone "if" is voor beginners duidelijker dan "??=".
+    prefer_conditional_assignment: false
