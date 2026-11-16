@@ -26,7 +26,11 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
-      - run: flutter build web --release --base-href /${{ github.event.repository.name }}/
+      # De CARTO-sleutel komt uit de GitHub-geheimen (Settings > Secrets > Actions),
+      # niet uit de code. Zo staat ze niet in de publieke repo.
+      - run: flutter build web --release --base-href /${{ github.event.repository.name }}/ --dart-define=CARTO_SLEUTEL=$CARTO_SLEUTEL
+        env:
+          CARTO_SLEUTEL: ${{ secrets.CARTO_SLEUTEL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web

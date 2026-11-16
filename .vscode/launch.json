@@ -1,0 +1,13 @@
+{
+  // Starten met F5: de sleutels uit ".env" worden automatisch meegegeven.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Bego Netwerkkaart (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define-from-file=.env"]
+    }
+  ]
+}

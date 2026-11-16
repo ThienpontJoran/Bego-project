@@ -11,3 +11,6 @@ build/
 # Documenten blijven lokaal (repo is publiek)
 *.pdf
 bego-netwerkkaart.md
+
+# Geheime sleutels (zie .env.voorbeeld)
+.env
