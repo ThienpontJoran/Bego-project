@@ -79,7 +79,7 @@ class _FilterVensterState extends State<FilterVenster> {
           padding: EdgeInsets.only(top: 6),
           child: Text(
             'Toont alleen contacten die in een keten met deze status zitten. '
-            '"Bijna" = twee van de drie gebruiken Bego.',
+            '"Bijna" = iedereen in de keten gebruikt Bego, op één na.',
             style: TextStyle(color: Colors.grey),
           ),
         ),

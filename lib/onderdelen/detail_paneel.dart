@@ -149,16 +149,19 @@ class DetailPaneel extends StatelessWidget {
 
     // Ketens
     for (Keten keten in opslag.ketensVan(contact)) {
-      List<String> anderen = [];
-      for (Contact lid in keten.leden) {
-        if (lid != contact) anderen.add(lid.naam);
-      }
+      String naam = 'Keten van ${keten.middelpunt.naam}';
+      if (keten.middelpunt == contact) naam = 'Eigen keten';
       regels.add(Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(children: [
           Label(tekst: ketenStatusTekst(keten.status), kleur: ketenStatusKleur(keten.status)),
           const SizedBox(width: 8),
-          Expanded(child: Text('met ${anderen.join(' en ')}', style: const TextStyle(fontSize: 13))),
+          Expanded(
+            child: Text(
+              '$naam · ${keten.aantalMee} van ${keten.leden.length} mee',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
         ]),
       ));
     }

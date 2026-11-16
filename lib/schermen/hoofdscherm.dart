@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../gegevens/contact.dart';
 import '../gegevens/filters.dart';
@@ -29,6 +30,7 @@ class Hoofdscherm extends StatefulWidget {
 
 class _HoofdschermState extends State<Hoofdscherm> {
   Contact? gekozen; // het aangeklikte contact (null = niemand)
+  Keten? gekozenKeten; // de keten die op de kaart oplicht (null = geen)
   Filters filters = Filters();
   int tabblad = 0; // laptop: 0 = contacten, 1 = ketens, 2 = opvolging
   int mobielTabblad = 0; // gsm: 0 = kaart, 1 = contacten, 2 = ketens, 3 = opvolging
@@ -41,15 +43,47 @@ class _HoofdschermState extends State<Hoofdscherm> {
 
   // ---------- Acties ----------
 
+  // Toon een hele keten op de kaart: alle leden lichten op en we zoomen erop in.
+  void toonKeten(Keten keten) {
+    setState(() {
+      gekozenKeten = keten;
+      gekozen = null;
+      mobielTabblad = 0; // op de gsm: naar het tabblad Kaart
+    });
+    List<LatLng> punten = [];
+    for (Contact lid in keten.leden) {
+      punten.add(lid.plaats);
+    }
+    kaartController.fitCamera(
+      CameraFit.coordinates(coordinates: punten, padding: const EdgeInsets.all(90), maxZoom: 12),
+    );
+  }
+
+  // Na een wijziging (bv. een bezoek) worden de ketens opnieuw berekend.
+  // Zoek dan de nieuwe versie van de gekozen keten (zelfde middelpunt).
+  Keten? vernieuwdeKeten() {
+    if (gekozenKeten == null) return null;
+    for (Keten keten in opslag.ketens) {
+      if (keten.middelpunt == gekozenKeten!.middelpunt) return keten;
+    }
+    return null;
+  }
+
   // Klik op een contact op de kaart (of naast een contact: null).
   void kiesOpKaart(Contact? contact) {
-    setState(() => gekozen = contact);
+    setState(() {
+      gekozen = contact;
+      gekozenKeten = null;
+    });
     if (contact != null && !isBreed()) openDetailPagina(contact);
   }
 
   // Klik op een contact in een lijst: kies het en zoom ernaartoe.
   void kiesUitLijst(Contact contact) {
-    setState(() => gekozen = contact);
+    setState(() {
+      gekozen = contact;
+      gekozenKeten = null;
+    });
     if (isBreed()) {
       zoomNaar(contact);
     } else {
@@ -104,15 +138,21 @@ class _HoofdschermState extends State<Hoofdscherm> {
     return resultaat;
   }
 
-  // Op de kaart tonen we ook altijd het gekozen contact en zijn partners.
+  // Op de kaart tonen we ook altijd het gekozen contact en zijn partners,
+  // en alle leden van de gekozen keten (ook als de filters ze zouden verbergen).
   List<Contact> kaartContacten() {
     List<Contact> resultaat = gefilterdeContacten();
+    List<Contact> extra = [];
     Contact? g = gekozen;
     if (g != null) {
-      if (!resultaat.contains(g)) resultaat.add(g);
-      for (Contact partner in opslag.partnersVan(g)) {
-        if (!resultaat.contains(partner)) resultaat.add(partner);
-      }
+      extra.add(g);
+      extra.addAll(opslag.partnersVan(g));
+    }
+    if (gekozenKeten != null) {
+      extra.addAll(gekozenKeten!.leden);
+    }
+    for (Contact contact in extra) {
+      if (!resultaat.contains(contact)) resultaat.add(contact);
     }
     return resultaat;
   }
@@ -127,6 +167,7 @@ class _HoofdschermState extends State<Hoofdscherm> {
       builder: (context, child) {
         // Is het gekozen contact intussen verwijderd? Dan is er niets meer gekozen.
         if (gekozen != null && !opslag.contacten.contains(gekozen)) gekozen = null;
+        gekozenKeten = vernieuwdeKeten();
 
         if (isBreed()) return breedScherm();
         return smalScherm();
@@ -212,7 +253,9 @@ class _HoofdschermState extends State<Hoofdscherm> {
       controller: kaartController,
       contacten: kaartContacten(),
       gekozen: gekozen,
+      gekozenKeten: gekozenKeten,
       onKies: kiesOpKaart,
+      onSluitKeten: () => setState(() => gekozenKeten = null),
       legendeOpen: legendeOpen,
     );
   }
@@ -260,7 +303,7 @@ class _HoofdschermState extends State<Hoofdscherm> {
   }
 
   Widget lijstVoorTabblad(int nummer) {
-    if (nummer == 1) return KetenLijst(onKies: kiesUitLijst);
+    if (nummer == 1) return KetenLijst(onKies: kiesUitLijst, onToonKeten: toonKeten);
     if (nummer == 2) return OpvolgLijst(onKies: kiesUitLijst);
     return ContactenLijst(contacten: gefilterdeContacten(), gekozen: gekozen, onKies: kiesUitLijst);
   }

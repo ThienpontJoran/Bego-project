@@ -109,24 +109,43 @@ class Opslag extends ChangeNotifier {
 
   // ---------- Ketens ----------
 
-  // Alle ketens chirurg - tandarts - labo.
-  // Keuze: de tandarts zit in het midden. De chirurg en het labo moeten allebei
-  // met de tandarts samenwerken; een rechtstreekse lijn chirurg-labo is niet nodig.
-  // (Open vraag in de analyse: pas dit aan als dat anders blijkt.)
+  // Alle ketens. Elke chirurg is het middelpunt van een keten met:
+  // - al zijn partners (tandartsen en eventueel labo's),
+  // - de labo's van die tandartsen.
+  // Een tandarts zonder chirurg is zelf het middelpunt (met zijn labo's).
   List<Keten> get ketens {
     List<Keten> resultaat = [];
-    for (Contact tandarts in contacten) {
-      if (tandarts.soort != Soort.tandarts) continue;
-      List<Contact> partners = partnersVan(tandarts);
-      for (Contact chirurg in partners) {
-        if (chirurg.soort != Soort.chirurg) continue;
-        for (Contact labo in partners) {
-          if (labo.soort != Soort.labo) continue;
-          resultaat.add(Keten(chirurg, tandarts, labo));
+    for (Contact contact in contacten) {
+      if (!isKetenMiddelpunt(contact)) continue;
+
+      List<Contact> leden = [contact];
+      for (Contact partner in partnersVan(contact)) {
+        if (!leden.contains(partner)) leden.add(partner);
+
+        // De labo's van een tandarts horen ook bij de keten.
+        if (partner.soort == Soort.tandarts) {
+          for (Contact labo in partnersVan(partner)) {
+            if (labo.soort == Soort.labo && !leden.contains(labo)) leden.add(labo);
+          }
         }
       }
+
+      // Een keten heeft minstens twee contacten.
+      if (leden.length >= 2) resultaat.add(Keten(contact, leden));
     }
     return resultaat;
+  }
+
+  bool isKetenMiddelpunt(Contact contact) {
+    if (contact.soort == Soort.chirurg) return true;
+    if (contact.soort == Soort.tandarts) {
+      // Alleen als hij met geen enkele chirurg samenwerkt.
+      for (Contact partner in partnersVan(contact)) {
+        if (partner.soort == Soort.chirurg) return false;
+      }
+      return true;
+    }
+    return false;
   }
 
   List<Keten> ketensVan(Contact contact) {

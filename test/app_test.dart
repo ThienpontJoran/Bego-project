@@ -34,12 +34,34 @@ void main() {
   test('ketens krijgen de juiste status', () {
     int volledig = 0;
     int bijna = 0;
+    int open = 0;
     for (Keten keten in opslag.ketens) {
       if (keten.status == KetenStatus.volledig) volledig++;
       if (keten.status == KetenStatus.bijna) bijna++;
+      if (keten.status == KetenStatus.open) open++;
     }
     expect(volledig, 1);
-    expect(bijna, 3);
+    expect(bijna, 2);
+    expect(open, 3);
+  });
+
+  test('keten van een chirurg bevat al zijn tandartsen en hun labo\'s', () {
+    Keten keten = opslag.ketens.firstWhere((k) => k.middelpunt == zoek('Dr. Koen Janssens'));
+    // Janssens werkt met 3 tandartsen en rechtstreeks met Dentalab; Desmet brengt Verhaeghe mee.
+    expect(keten.leden.length, 6);
+    expect(keten.bevat(zoek('Tandtechniek Verhaeghe')), true);
+    expect(keten.status, KetenStatus.bijna);
+    expect(keten.nietMee, [zoek('Labo Dentalab')]);
+  });
+
+  test('tandarts zonder chirurg krijgt een eigen keten', () {
+    Keten keten = opslag.ketens.firstWhere((k) => k.middelpunt == zoek('Dr. Jonas Martens'));
+    expect(keten.leden, [zoek('Dr. Jonas Martens'), zoek('Smile Lab')]);
+  });
+
+  test('labo kan in meerdere ketens zitten', () {
+    // Dentalab werkt met tandartsen van Janssens en van Willems.
+    expect(opslag.ketensVan(zoek('Labo Dentalab')).length, 2);
   });
 
   test('een bezoek past de interesse aan', () {
@@ -128,9 +150,14 @@ void main() {
     await tester.tap(find.text('Toon resultaten'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Ketens (3)'));
+    await tester.tap(find.text('Ketens (2)'));
     await tester.pumpAndSettle();
     expect(find.text('Ontbreekt'), findsWidgets);
+
+    // Hele keten op de kaart tonen: er verschijnt een balkje met de naam.
+    await tester.tap(find.byTooltip('Toon op kaart').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('/6 mee'), findsOneWidget);
 
     await tester.tap(find.text('Opvolging'));
     await tester.pumpAndSettle();

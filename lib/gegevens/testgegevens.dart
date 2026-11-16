@@ -122,8 +122,34 @@ void vulTestgegevens(Opslag opslag) {
     naam: 'Dr. Eva Wouters',
     adres: 'Oudenaardsestraat 40, 9500 Geraardsbergen',
     plaats: LatLng(50.776, 3.872),
-    merken: ['Straumann'],
-    interesse: Interesse.geinteresseerd,
+    merken: ['Bego'],
+    interesse: Interesse.gebruiktBego,
+  );
+
+  // ---------- Een kleine keten die al volledig Bego is ----------
+  Contact coppens = Contact(
+    soort: Soort.chirurg,
+    naam: 'Dr. Hilde Coppens',
+    adres: 'Stationsplein 2, 9900 Eeklo',
+    plaats: LatLng(51.183, 3.563),
+    merken: ['Bego'],
+    interesse: Interesse.gebruiktBego,
+  );
+  Contact dhondt = Contact(
+    soort: Soort.tandarts,
+    naam: 'Dr. Wim Dhondt',
+    adres: 'Markt 10, 9900 Eeklo',
+    plaats: LatLng(51.186, 3.558),
+    merken: ['Bego'],
+    interesse: Interesse.gebruiktBego,
+  );
+  Contact meetjesland = Contact(
+    soort: Soort.labo,
+    naam: 'Labo Meetjesland',
+    adres: 'Industrielaan 3, 9990 Maldegem',
+    plaats: LatLng(51.207, 3.447),
+    merken: ['Bego'],
+    interesse: Interesse.gebruiktBego,
   );
 
   // ---------- Labo's ----------
@@ -170,9 +196,9 @@ void vulTestgegevens(Opslag opslag) {
   );
 
   opslag.contacten.addAll([
-    janssens, deVos, willems, vandamme, lambrecht,
-    peeters, maes, claes, desmet, vermeulen, goossens, martens, wouters,
-    dentalab, smileLab, verhaeghe, kroonBrug, scheldeland,
+    janssens, deVos, willems, vandamme, lambrecht, coppens,
+    peeters, maes, claes, desmet, vermeulen, goossens, martens, wouters, dhondt,
+    dentalab, smileLab, verhaeghe, kroonBrug, scheldeland, meetjesland,
   ]);
 
   // ---------- Relaties ----------
@@ -192,8 +218,9 @@ void vulTestgegevens(Opslag opslag) {
   opslag.voegRelatieToe(vermeulen, dentalab);
   opslag.voegRelatieToe(vandamme, claes);
   opslag.voegRelatieToe(claes, verhaeghe);
-  opslag.voegRelatieToe(deVos, martens, bevestigd: false);
-  opslag.voegRelatieToe(martens, smileLab, bevestigd: false);
+  opslag.voegRelatieToe(martens, smileLab, bevestigd: false); // tandarts zonder chirurg
+  opslag.voegRelatieToe(coppens, dhondt);
+  opslag.voegRelatieToe(dhondt, meetjesland);
 
   // ---------- Bezoeken ----------
   voegBezoekToe(opslag, janssens, 20, Contactmoment.bezoek,

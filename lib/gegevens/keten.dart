@@ -1,4 +1,7 @@
-// Een keten = een chirurg, een tandarts en een labo die samenwerken.
+// Een keten = een chirurg met al zijn tandartsen en hun labo's
+// (plus de labo's waarmee de chirurg rechtstreeks werkt).
+// Een tandarts zonder gekende chirurg krijgt een eigen keten met zijn labo's.
+// Een keten kan dus 2, 3 of veel meer contacten bevatten.
 
 import 'package:flutter/material.dart';
 
@@ -7,15 +10,10 @@ import 'contact.dart';
 enum KetenStatus { volledig, bijna, open }
 
 class Keten {
-  Contact chirurg;
-  Contact tandarts;
-  Contact labo;
+  Contact middelpunt; // de chirurg (of tandarts zonder chirurg) waar de keten rond draait
+  List<Contact> leden; // alle contacten in de keten, ook het middelpunt
 
-  Keten(this.chirurg, this.tandarts, this.labo);
-
-  List<Contact> get leden {
-    return [chirurg, tandarts, labo];
-  }
+  Keten(this.middelpunt, this.leden);
 
   // De leden die nog geen Bego gebruiken.
   List<Contact> get nietMee {
@@ -28,15 +26,31 @@ class Keten {
     return resultaat;
   }
 
+  int get aantalMee {
+    return leden.length - nietMee.length;
+  }
+
+  // Volledig = iedereen gebruikt Bego.
+  // Bijna = iedereen op één na: één bezoek kan de keten volledig maken.
+  // Open = twee of meer zijn nog niet mee.
   KetenStatus get status {
-    int aantalMee = 3 - nietMee.length;
-    if (aantalMee == 3) return KetenStatus.volledig;
-    if (aantalMee == 2) return KetenStatus.bijna;
+    int aantalNietMee = nietMee.length;
+    if (aantalNietMee == 0) return KetenStatus.volledig;
+    if (aantalNietMee == 1) return KetenStatus.bijna;
     return KetenStatus.open;
   }
 
   bool bevat(Contact contact) {
     return leden.contains(contact);
+  }
+
+  // Alle leden van één type, bv. alle labo's in deze keten.
+  List<Contact> ledenVan(Soort soort) {
+    List<Contact> resultaat = [];
+    for (Contact lid in leden) {
+      if (lid.soort == soort) resultaat.add(lid);
+    }
+    return resultaat;
   }
 }
 
