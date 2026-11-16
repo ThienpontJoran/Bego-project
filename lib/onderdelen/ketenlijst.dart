@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../gegevens/contact.dart';
 import '../gegevens/keten.dart';
 import '../gegevens/opslag.dart';
+import '../schermen/keten_naam_venster.dart';
 import 'label.dart';
 import 'vorm.dart';
 
@@ -40,17 +41,17 @@ class KetenLijst extends StatelessWidget {
     delen.add(titel('Bijna Bego (${bijna.length})', 'Iedereen is mee op één na. Eén bezoek maakt de keten volledig.'));
     if (bijna.isEmpty) delen.add(const Padding(padding: EdgeInsets.all(8), child: Text('Geen bijna-ketens.')));
     for (Keten keten in bijna) {
-      delen.add(ketenKaart(keten));
+      delen.add(ketenKaart(context, keten));
     }
 
     delen.add(titel('Volledig Bego (${volledig.length})', 'Alle contacten in de keten gebruiken Bego.'));
     for (Keten keten in volledig) {
-      delen.add(ketenKaart(keten));
+      delen.add(ketenKaart(context, keten));
     }
 
     delen.add(titel('Open (${open.length})', 'Twee of meer contacten zijn nog niet mee.'));
     for (Keten keten in open) {
-      delen.add(ketenKaart(keten));
+      delen.add(ketenKaart(context, keten));
     }
 
     return ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 96), children: delen);
@@ -71,7 +72,7 @@ class KetenLijst extends StatelessWidget {
     );
   }
 
-  Widget ketenKaart(Keten keten) {
+  Widget ketenKaart(BuildContext context, Keten keten) {
     Color kleur = ketenStatusKleur(keten.status);
 
     List<Widget> inhoud = [
@@ -79,7 +80,16 @@ class KetenLijst extends StatelessWidget {
       Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Keten van ${keten.middelpunt.naam}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            // Klik op de naam (of het potloodje) om de keten een andere naam te geven.
+            InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: () => hernoemKeten(context, keten),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(child: Text(keten.naam, style: const TextStyle(fontWeight: FontWeight.w700))),
+                const SizedBox(width: 6),
+                const Tooltip(message: 'Naam wijzigen', child: Icon(Icons.edit_outlined, size: 16, color: Colors.grey)),
+              ]),
+            ),
             Text('${keten.aantalMee} van ${keten.leden.length} gebruiken Bego',
                 style: const TextStyle(fontSize: 13, color: Colors.grey)),
           ]),

@@ -85,8 +85,9 @@ class Relatie {
   Contact tweede;
   bool bevestigd; // false = "ik denk dat ze samenwerken" (stippellijn)
   String opmerking;
+  Color? kleur; // eigen kleur voor de lijn op de kaart (null = standaard grijs)
 
-  Relatie(this.eerste, this.tweede, {this.bevestigd = true, this.opmerking = ''});
+  Relatie(this.eerste, this.tweede, {this.bevestigd = true, this.opmerking = '', this.kleur});
 
   bool bevat(Contact contact) {
     return eerste == contact || tweede == contact;
@@ -100,6 +101,17 @@ class Relatie {
 }
 
 // ---------- Teksten en kleuren ----------
+
+// Kleuren die je aan een verbindingslijn kan geven.
+// (Bewust geen groen/oranje/rood: die betekenen al iets bij de vormen.)
+const List<Color> lijnKleuren = [
+  Color(0xFF1E88E5), // blauw
+  Color(0xFF8E24AA), // paars
+  Color(0xFFD81B60), // roze
+  Color(0xFF00897B), // blauwgroen
+  Color(0xFF6D4C41), // bruin
+  Color(0xFF212121), // zwart
+];
 
 String soortTekst(Soort soort) {
   switch (soort) {

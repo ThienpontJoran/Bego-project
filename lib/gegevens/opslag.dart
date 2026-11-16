@@ -2,7 +2,7 @@
 // Voorlopig enkel in het geheugen: herlaad je de pagina, dan start je opnieuw
 // met de testgegevens. Later komt hier de database.
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import 'contact.dart';
 import 'keten.dart';
@@ -13,6 +13,10 @@ import 'testgegevens.dart';
 class Opslag extends ChangeNotifier {
   List<Contact> contacten = [];
   List<Relatie> relaties = [];
+
+  // Zelfgekozen namen van ketens. Een keten wordt herkend aan zijn middelpunt
+  // (de chirurg), want de ketens zelf worden telkens opnieuw berekend.
+  Map<Contact, String> ketenNamen = {};
 
   Opslag() {
     vulTestgegevens(this);
@@ -31,6 +35,7 @@ class Opslag extends ChangeNotifier {
   void verwijderContact(Contact contact) {
     contacten.remove(contact);
     relaties.removeWhere((relatie) => relatie.bevat(contact));
+    ketenNamen.remove(contact);
   }
 
   // ---------- Relaties ----------
@@ -55,13 +60,14 @@ class Opslag extends ChangeNotifier {
   }
 
   // Voegt een relatie toe, of past ze aan als ze al bestaat.
-  void voegRelatieToe(Contact a, Contact b, {bool bevestigd = true, String opmerking = ''}) {
+  void voegRelatieToe(Contact a, Contact b, {bool bevestigd = true, String opmerking = '', Color? kleur}) {
     Relatie? bestaand = relatieTussen(a, b);
     if (bestaand != null) {
       bestaand.bevestigd = bevestigd;
       bestaand.opmerking = opmerking;
+      bestaand.kleur = kleur;
     } else {
-      relaties.add(Relatie(a, b, bevestigd: bevestigd, opmerking: opmerking));
+      relaties.add(Relatie(a, b, bevestigd: bevestigd, opmerking: opmerking, kleur: kleur));
     }
   }
 
@@ -131,9 +137,25 @@ class Opslag extends ChangeNotifier {
       }
 
       // Een keten heeft minstens twee contacten.
-      if (leden.length >= 2) resultaat.add(Keten(contact, leden));
+      if (leden.length >= 2) resultaat.add(Keten(contact, leden, ketenNaamVan(contact)));
     }
     return resultaat;
+  }
+
+  // De naam van de keten rond [middelpunt]: de zelfgekozen naam, of "Keten van ...".
+  String ketenNaamVan(Contact middelpunt) {
+    String? eigenNaam = ketenNamen[middelpunt];
+    if (eigenNaam != null) return eigenNaam;
+    return 'Keten van ${middelpunt.naam}';
+  }
+
+  // Een lege naam = terug naar de standaardnaam.
+  void zetKetenNaam(Contact middelpunt, String naam) {
+    if (naam.trim().isEmpty) {
+      ketenNamen.remove(middelpunt);
+    } else {
+      ketenNamen[middelpunt] = naam.trim();
+    }
   }
 
   bool isKetenMiddelpunt(Contact contact) {

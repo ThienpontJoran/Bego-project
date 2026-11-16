@@ -8,6 +8,9 @@ import '../gegevens/contact.dart';
 import '../gegevens/keten.dart';
 import '../gegevens/opslag.dart';
 import '../instellingen.dart';
+import '../schermen/keten_naam_venster.dart';
+import '../schermen/relatie_formulier.dart';
+import '../schermen/venster.dart';
 import 'label.dart';
 import 'legende.dart';
 import 'vorm.dart';
@@ -57,6 +60,7 @@ class Kaart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<Contact> uitgelicht = uitgelichteContacten();
+    LayerHitNotifier<Relatie> lijnGeraakt = ValueNotifier(null);
 
     // De lagen liggen op elkaar: eerst de kaart, daarbovenop de knoppen en de legende.
     List<Widget> lagen = [
@@ -78,8 +82,20 @@ class Kaart extends StatelessWidget {
             retinaMode: RetinaMode.isHighDensity(context),
             userAgentPackageName: 'be.bego.netwerkkaart',
           ),
-          // 2. Lijnen tussen partners
-          PolylineLayer(polylines: maakLijnen(uitgelicht)),
+          // 2. Lijnen tussen partners. Klik op een lijn om ze te bewerken (bv. een kleur geven).
+          //    De "lijnGeraakt"-melder vertelt welke lijn(en) onder de muis liggen.
+          MouseRegion(
+            hitTestBehavior: HitTestBehavior.deferToChild,
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () => klikOpLijn(context, lijnGeraakt),
+              child: PolylineLayer<Relatie>(
+                hitNotifier: lijnGeraakt,
+                minimumHitbox: 12, // ook een beetje naast de lijn klikken telt
+                polylines: maakLijnen(uitgelicht),
+              ),
+            ),
+          ),
           // 3. Vormen van de contacten
           // (Builder: zo weten we de huidige zoom, om namen te tonen als je inzoomt.)
           Builder(builder: (context) {
@@ -111,14 +127,22 @@ class Kaart extends StatelessWidget {
         top: 72,
         left: 12,
         right: 72,
-        child: Align(alignment: Alignment.centerLeft, child: ketenBalk(gekozenKeten!)),
+        child: Align(alignment: Alignment.centerLeft, child: ketenBalk(context, gekozenKeten!)),
       ));
     }
 
     return Stack(children: lagen);
   }
 
-  Widget ketenBalk(Keten keten) {
+  // Er is op een lijn geklikt: open het venster om die relatie te bewerken.
+  void klikOpLijn(BuildContext context, LayerHitNotifier<Relatie> lijnGeraakt) {
+    LayerHitResult<Relatie>? geraakt = lijnGeraakt.value;
+    if (geraakt == null || geraakt.hitValues.isEmpty) return;
+    Relatie relatie = geraakt.hitValues.first; // bovenste lijn als er meerdere op elkaar liggen
+    toonVenster(context, RelatieFormulier(contact: relatie.eerste, bestaand: relatie));
+  }
+
+  Widget ketenBalk(BuildContext context, Keten keten) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 4, 4, 4),
@@ -127,10 +151,15 @@ class Kaart extends StatelessWidget {
           const SizedBox(width: 10),
           Flexible(
             child: Text(
-              'Keten van ${keten.middelpunt.naam} · ${keten.aantalMee}/${keten.leden.length} mee',
+              '${keten.naam} · ${keten.aantalMee}/${keten.leden.length} mee',
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
+          ),
+          IconButton(
+            tooltip: 'Naam wijzigen',
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            onPressed: () => hernoemKeten(context, keten),
           ),
           IconButton(tooltip: 'Sluiten', icon: const Icon(Icons.close, size: 18), onPressed: onSluitKeten),
         ]),
@@ -162,20 +191,26 @@ class Kaart extends StatelessWidget {
     return uitgelicht.contains(contact);
   }
 
-  List<Polyline> maakLijnen(List<Contact> uitgelicht) {
-    List<Polyline> lijnen = [];
+  List<Polyline<Relatie>> maakLijnen(List<Contact> uitgelicht) {
+    List<Polyline<Relatie>> lijnen = [];
     for (Relatie relatie in opslag.relaties) {
       // Alleen lijnen tussen twee zichtbare contacten.
       if (!contacten.contains(relatie.eerste) || !contacten.contains(relatie.tweede)) continue;
 
+      // Standaard grijs; een lijn met een eigen kleur is iets dikker zodat je ze goed ziet.
       Color kleur = const Color(0xFF546E7A).withValues(alpha: 0.7);
       double dikte = 2;
+      if (relatie.kleur != null) {
+        kleur = relatie.kleur!;
+        dikte = 3;
+      }
+
       if (uitgelicht.isNotEmpty) {
         if (lijnUitgelicht(relatie)) {
-          kleur = const Color(0xFF263238);
-          dikte = 3.5;
+          if (relatie.kleur == null) kleur = const Color(0xFF263238);
+          dikte = dikte + 1.5;
         } else {
-          kleur = const Color(0xFF546E7A).withValues(alpha: 0.15);
+          kleur = kleur.withValues(alpha: 0.15);
           dikte = 1.5;
         }
       }
@@ -185,7 +220,8 @@ class Kaart extends StatelessWidget {
         stijl = StrokePattern.dashed(segments: [8, 6]); // stippellijn
       }
 
-      lijnen.add(Polyline(
+      lijnen.add(Polyline<Relatie>(
+        hitValue: relatie, // zo weten we welke relatie je aanklikt
         points: [relatie.eerste.plaats, relatie.tweede.plaats],
         color: kleur,
         strokeWidth: dikte,

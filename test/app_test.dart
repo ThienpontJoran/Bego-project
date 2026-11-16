@@ -1,6 +1,7 @@
 // Kleine tests. Uitvoeren met: .flutter\bin\flutter.bat test
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bego_netwerkkaart/gegevens/adres_zoeker.dart';
@@ -64,6 +65,23 @@ void main() {
     expect(opslag.ketensVan(zoek('Labo Dentalab')).length, 2);
   });
 
+  test('keten een eigen naam geven en terugzetten', () {
+    Contact janssens = zoek('Dr. Koen Janssens');
+    opslag.zetKetenNaam(janssens, 'Regio Oudenaarde');
+    expect(opslag.ketens.firstWhere((k) => k.middelpunt == janssens).naam, 'Regio Oudenaarde');
+    opslag.zetKetenNaam(janssens, '');
+    expect(opslag.ketens.firstWhere((k) => k.middelpunt == janssens).naam, 'Keten van Dr. Koen Janssens');
+  });
+
+  test('relatie een kleur geven', () {
+    Contact peeters = zoek('Dr. An Peeters');
+    Contact dentalab = zoek('Labo Dentalab');
+    opslag.voegRelatieToe(peeters, dentalab, kleur: lijnKleuren.first);
+    expect(opslag.relatieTussen(peeters, dentalab)!.kleur, lijnKleuren.first);
+    opslag.voegRelatieToe(peeters, dentalab);
+    expect(opslag.relatieTussen(peeters, dentalab)!.kleur, null);
+  });
+
   test('een bezoek past de interesse aan', () {
     Contact maes = zoek('Dr. Tom Maes');
     opslag.voegBezoekToe(maes, Bezoek(datum: DateTime.now(), soort: Contactmoment.bezoek, interesseNa: Interesse.gebruiktBego));
@@ -102,6 +120,32 @@ void main() {
     await tester.tap(find.text('Nieuw merk toevoegen: "Osstem"'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(InputChip, 'Osstem'), findsOneWidget);
+    tester.view.reset();
+  });
+
+  testWidgets('klikken op een lijn opent de relatie', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    await tester.pumpWidget(const BegoApp());
+    await tester.pumpAndSettle();
+
+    // De langste lijn op het scherm zoeken en in het midden ervan klikken.
+    MapController controller = tester.widget<FlutterMap>(find.byType(FlutterMap)).mapController!;
+    Offset kaartHoek = tester.getTopLeft(find.byType(FlutterMap));
+    Offset? midden;
+    double langste = 0;
+    for (Relatie relatie in opslag.relaties) {
+      Offset a = controller.camera.latLngToScreenOffset(relatie.eerste.plaats);
+      Offset b = controller.camera.latLngToScreenOffset(relatie.tweede.plaats);
+      if ((a - b).distance > langste) {
+        langste = (a - b).distance;
+        midden = kaartHoek + (a + b) / 2;
+      }
+    }
+    await tester.tapAt(midden!);
+    await tester.pumpAndSettle();
+    expect(find.text('Relatie bewerken'), findsOneWidget);
+    expect(find.text('Kleur van de lijn'), findsOneWidget);
     tester.view.reset();
   });
 
@@ -158,6 +202,14 @@ void main() {
     await tester.tap(find.byTooltip('Toon op kaart').first);
     await tester.pumpAndSettle();
     expect(find.textContaining('/6 mee'), findsOneWidget);
+
+    // Keten hernoemen via het potloodje in het balkje.
+    await tester.tap(find.byTooltip('Naam wijzigen').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Regio Oudenaarde');
+    await tester.tap(find.text('Opslaan').last);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Regio Oudenaarde · '), findsOneWidget);
 
     await tester.tap(find.text('Opvolging'));
     await tester.pumpAndSettle();

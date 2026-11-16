@@ -22,6 +22,7 @@ class RelatieFormulier extends StatefulWidget {
 class _RelatieFormulierState extends State<RelatieFormulier> {
   Contact? partner;
   bool bevestigd = true;
+  Color? kleur; // null = standaard grijs
   TextEditingController opmerking = TextEditingController();
 
   @override
@@ -31,6 +32,7 @@ class _RelatieFormulierState extends State<RelatieFormulier> {
     if (bestaand != null) {
       partner = bestaand.ander(widget.contact);
       bevestigd = bestaand.bevestigd;
+      kleur = bestaand.kleur;
       opmerking.text = bestaand.opmerking;
     }
   }
@@ -48,7 +50,8 @@ class _RelatieFormulierState extends State<RelatieFormulier> {
   }
 
   void opslaan() {
-    opslag.voegRelatieToe(widget.contact, partner!, bevestigd: bevestigd, opmerking: opmerking.text.trim());
+    opslag.voegRelatieToe(widget.contact, partner!,
+        bevestigd: bevestigd, opmerking: opmerking.text.trim(), kleur: kleur);
     opslag.bijgewerkt();
     Navigator.pop(context);
   }
@@ -101,6 +104,14 @@ class _RelatieFormulierState extends State<RelatieFormulier> {
       child: Text('Een vermoede samenwerking is een stippellijn op de kaart.', style: TextStyle(color: Colors.grey)),
     ));
 
+    // Kleur van de lijn: een rij bolletjes, het eerste (grijs) is de standaard.
+    velden.add(kopje(context, 'Kleur van de lijn'));
+    List<Widget> bolletjes = [kleurBolletje(null)];
+    for (Color mogelijkeKleur in lijnKleuren) {
+      bolletjes.add(kleurBolletje(mogelijkeKleur));
+    }
+    velden.add(Wrap(spacing: 10, runSpacing: 10, children: bolletjes));
+
     velden.add(kopje(context, 'Opmerking'));
     velden.add(TextField(
       controller: opmerking,
@@ -123,6 +134,39 @@ class _RelatieFormulierState extends State<RelatieFormulier> {
     return Scaffold(
       appBar: formulierBalk(context, titel, opslaanKnop),
       body: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 32), children: velden),
+    );
+  }
+
+  // Eén rond bolletje om een kleur te kiezen. null = standaard (grijs).
+  Widget kleurBolletje(Color? bolKleur) {
+    bool gekozen = kleur == bolKleur;
+    Color getoond = const Color(0xFF90A4AE);
+    String uitleg = 'Standaard (grijs)';
+    if (bolKleur != null) {
+      getoond = bolKleur;
+      uitleg = 'Deze kleur';
+    }
+
+    Widget? vinkje;
+    if (gekozen) vinkje = const Icon(Icons.check, color: Colors.white, size: 20);
+
+    return Tooltip(
+      message: uitleg,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () => setState(() => kleur = bolKleur),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: getoond,
+            shape: BoxShape.circle,
+            border: Border.all(color: gekozen ? Colors.black87 : Colors.white, width: 3),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+          ),
+          child: vinkje,
+        ),
+      ),
     );
   }
 }

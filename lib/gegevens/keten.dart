@@ -12,8 +12,9 @@ enum KetenStatus { volledig, bijna, open }
 class Keten {
   Contact middelpunt; // de chirurg (of tandarts zonder chirurg) waar de keten rond draait
   List<Contact> leden; // alle contacten in de keten, ook het middelpunt
+  String naam; // bv. "Keten van Dr. Koen Janssens", of een zelfgekozen naam
 
-  Keten(this.middelpunt, this.leden);
+  Keten(this.middelpunt, this.leden, this.naam);
 
   // De leden die nog geen Bego gebruiken.
   List<Contact> get nietMee {

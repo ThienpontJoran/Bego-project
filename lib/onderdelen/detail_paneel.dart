@@ -149,8 +149,7 @@ class DetailPaneel extends StatelessWidget {
 
     // Ketens
     for (Keten keten in opslag.ketensVan(contact)) {
-      String naam = 'Keten van ${keten.middelpunt.naam}';
-      if (keten.middelpunt == contact) naam = 'Eigen keten';
+      String naam = keten.naam;
       regels.add(Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(children: [

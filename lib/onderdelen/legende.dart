@@ -55,6 +55,10 @@ class _LegendeState extends State<Legende> {
       regels.add(const Divider(height: 14));
       regels.add(regel(lijntje(false), 'Werken samen'));
       regels.add(regel(lijntje(true), 'Vermoed'));
+      regels.add(const Padding(
+        padding: EdgeInsets.only(top: 4),
+        child: Text('Klik op een lijn om ze\neen kleur te geven', style: TextStyle(fontSize: 11, color: Colors.grey)),
+      ));
     }
 
     return Card(
