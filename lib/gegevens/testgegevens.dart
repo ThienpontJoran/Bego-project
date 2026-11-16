@@ -242,6 +242,9 @@ void vulTestgegevens(Opslag opslag) {
   voegBezoekToe(opslag, vermeulen, 95, Contactmoment.bezoek, 'Heeft bezwaren over de prijs.',
       volgendeStap: 'Terugbellen met kortingsvoorstel', stapOverDagen: 12);
   voegBezoekToe(opslag, wouters, 12, Contactmoment.bezoek, 'Wil een proefpakket.');
+  voegBezoekToe(opslag, coppens, 30, Contactmoment.bezoek, 'Hele keten werkt nu met Bego.');
+  voegBezoekToe(opslag, dhondt, 30, Contactmoment.telefoon, 'Tevreden.');
+  voegBezoekToe(opslag, meetjesland, 50, Contactmoment.email, 'Bestelling bevestigd.');
 }
 
 // Hulpfunctie: voegt een bezoek toe van [dagenGeleden] dagen geleden.

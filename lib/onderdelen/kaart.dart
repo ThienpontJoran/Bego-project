@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../gegevens/contact.dart';
 import '../gegevens/keten.dart';
 import '../gegevens/opslag.dart';
+import '../instellingen.dart';
 import 'label.dart';
 import 'legende.dart';
 import 'vorm.dart';
@@ -69,18 +70,33 @@ class Kaart extends StatelessWidget {
           maxZoom: 18,
           onTap: (positie, punt) => onKies(null), // naast een contact klikken = niets gekozen
         ),
+        // De lagen van onder naar boven:
         children: [
+          // 1. Kaart zonder plaatsnamen
           TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            urlTemplate: kaartZonderNamen,
+            retinaMode: RetinaMode.isHighDensity(context),
             userAgentPackageName: 'be.bego.netwerkkaart',
           ),
+          // 2. Lijnen tussen partners
           PolylineLayer(polylines: maakLijnen(uitgelicht)),
-          // Builder: zo weten we de huidige zoom, om namen te tonen als je inzoomt.
+          // 3. Vormen van de contacten
+          // (Builder: zo weten we de huidige zoom, om namen te tonen als je inzoomt.)
           Builder(builder: (context) {
             double zoom = MapCamera.of(context).zoom;
             return MarkerLayer(markers: maakIconen(zoom, uitgelicht));
           }),
+          // 4. Plaatsnamen bovenop, zodat vormen ze niet bedekken.
+          //    IgnorePointer: klikken gaan door deze laag heen naar de vormen eronder.
+          IgnorePointer(
+            child: TileLayer(
+              urlTemplate: kaartAlleenNamen,
+              retinaMode: RetinaMode.isHighDensity(context),
+              userAgentPackageName: 'be.bego.netwerkkaart',
+            ),
+          ),
           const RichAttributionWidget(attributions: [
+            TextSourceAttribution('CARTO'),
             TextSourceAttribution('OpenStreetMap contributors'),
           ]),
         ],
