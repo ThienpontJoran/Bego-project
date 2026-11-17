@@ -1,8 +1,11 @@
-// Hoe een contact, een bezoek en een relatie eruitzien,
-// plus de teksten en kleuren die bij elk type en elke interesse horen.
+// Hoe een contact eruitziet, plus de teksten en kleuren die bij elk type en elke interesse horen.
+// Een contact wordt bewaard in de tabel "contacten" in Supabase.
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
+
+import 'bezoek.dart';
 
 // Het soort contact. Dit bepaalt de vorm op de kaart.
 enum Soort { chirurg, tandarts, labo }
@@ -10,28 +13,8 @@ enum Soort { chirurg, tandarts, labo }
 // Hoe ver iemand mee is met Bego. Dit bepaalt de kleur op de kaart.
 enum Interesse { gebruiktBego, geinteresseerd, twijfelt, nietGeinteresseerd, nietBenaderd }
 
-// Hoe je iemand gesproken hebt.
-enum Contactmoment { bezoek, telefoon, email, beurs }
-
-class Bezoek {
-  DateTime datum;
-  Contactmoment soort;
-  String verslag;
-  String volgendeStap; // leeg = geen volgende stap
-  DateTime? volgendeStapDatum; // null = geen datum gekozen
-  Interesse interesseNa;
-
-  Bezoek({
-    required this.datum,
-    required this.soort,
-    required this.interesseNa,
-    this.verslag = '',
-    this.volgendeStap = '',
-    this.volgendeStapDatum,
-  });
-}
-
 class Contact {
+  String id; // uniek nummer in de database, bv. "3f2b9c1e-..."
   Soort soort;
   String naam;
   String praktijk; // leeg = niet ingevuld
@@ -42,9 +25,13 @@ class Contact {
   List<String> merken; // huidige implantaatmerken
   Interesse interesse;
   String opmerking;
+  String ketenNaam; // zelfgekozen naam van de keten rond dit contact (leeg = standaardnaam)
   List<Bezoek> bezoeken = []; // het nieuwste bezoek staat vooraan
 
+  // Geef je geen id mee, dan maken we zelf een nieuw, uniek id.
+  // ("??" betekent: gebruik het rechtse als het linkse null is.)
   Contact({
+    String? id,
     required this.soort,
     required this.naam,
     required this.adres,
@@ -55,7 +42,51 @@ class Contact {
     this.email = '',
     this.merken = const [],
     this.opmerking = '',
-  });
+    this.ketenNaam = '',
+  }) : id = id ?? const Uuid().v4();
+
+  // ---------- Van en naar de database ----------
+
+  // Maakt een contact uit een rij van de tabel "contacten".
+  // Een enum bewaren we als tekst, bv. Soort.chirurg -> "chirurg".
+  static Contact vanDatabase(Map<String, dynamic> rij) {
+    return Contact(
+      id: rij['id'],
+      soort: Soort.values.byName(rij['soort']),
+      naam: rij['naam'],
+      praktijk: rij['praktijk'],
+      adres: rij['adres'],
+      // "as num" + toDouble(): de database kan 51 sturen in plaats van 51.0.
+      plaats: LatLng((rij['breedtegraad'] as num).toDouble(), (rij['lengtegraad'] as num).toDouble()),
+      telefoon: rij['telefoon'],
+      email: rij['email'],
+      merken: List<String>.from(rij['merken']),
+      interesse: Interesse.values.byName(rij['interesse']),
+      opmerking: rij['opmerking'],
+      ketenNaam: rij['keten_naam'],
+    );
+  }
+
+  // Zet het contact om naar een rij voor de tabel "contacten".
+  Map<String, dynamic> naarDatabase() {
+    return {
+      'id': id,
+      'soort': soort.name,
+      'naam': naam,
+      'praktijk': praktijk,
+      'adres': adres,
+      'breedtegraad': plaats.latitude,
+      'lengtegraad': plaats.longitude,
+      'telefoon': telefoon,
+      'email': email,
+      'merken': merken,
+      'interesse': interesse.name,
+      'opmerking': opmerking,
+      'keten_naam': ketenNaam,
+    };
+  }
+
+  // ---------- Handige eigenschappen ----------
 
   // Een "get" werkt zoals een property in C#: je gebruikt het als contact.laatsteBezoek
   Bezoek? get laatsteBezoek {
@@ -79,39 +110,7 @@ class Contact {
   }
 }
 
-// Twee contacten die samen patiënten behandelen. Werkt in beide richtingen.
-class Relatie {
-  Contact eerste;
-  Contact tweede;
-  bool bevestigd; // false = "ik denk dat ze samenwerken" (stippellijn)
-  String opmerking;
-  Color? kleur; // eigen kleur voor de lijn op de kaart (null = standaard grijs)
-
-  Relatie(this.eerste, this.tweede, {this.bevestigd = true, this.opmerking = '', this.kleur});
-
-  bool bevat(Contact contact) {
-    return eerste == contact || tweede == contact;
-  }
-
-  // Geeft de andere kant van de relatie.
-  Contact ander(Contact contact) {
-    if (eerste == contact) return tweede;
-    return eerste;
-  }
-}
-
 // ---------- Teksten en kleuren ----------
-
-// Kleuren die je aan een verbindingslijn kan geven.
-// (Bewust geen groen/oranje/rood: die betekenen al iets bij de vormen.)
-const List<Color> lijnKleuren = [
-  Color(0xFF1E88E5), // blauw
-  Color(0xFF8E24AA), // paars
-  Color(0xFFD81B60), // roze
-  Color(0xFF00897B), // blauwgroen
-  Color(0xFF6D4C41), // bruin
-  Color(0xFF212121), // zwart
-];
 
 String soortTekst(Soort soort) {
   switch (soort) {
@@ -162,31 +161,5 @@ Color interesseKleur(Interesse interesse) {
       return const Color(0xFFE53935); // rood
     case Interesse.nietBenaderd:
       return const Color(0xFF9E9E9E); // grijs
-  }
-}
-
-String contactmomentTekst(Contactmoment moment) {
-  switch (moment) {
-    case Contactmoment.bezoek:
-      return 'Bezoek';
-    case Contactmoment.telefoon:
-      return 'Telefoon';
-    case Contactmoment.email:
-      return 'E-mail';
-    case Contactmoment.beurs:
-      return 'Beurs';
-  }
-}
-
-IconData contactmomentIcoon(Contactmoment moment) {
-  switch (moment) {
-    case Contactmoment.bezoek:
-      return Icons.directions_car_outlined;
-    case Contactmoment.telefoon:
-      return Icons.phone_outlined;
-    case Contactmoment.email:
-      return Icons.mail_outline;
-    case Contactmoment.beurs:
-      return Icons.storefront_outlined;
   }
 }

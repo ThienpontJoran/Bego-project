@@ -2,10 +2,12 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/hulpfuncties.dart';
-import '../gegevens/keten.dart';
-import '../gegevens/opslag.dart';
+import '../models/bezoek.dart';
+import '../models/contact.dart';
+import '../models/relatie.dart';
+import '../utils/hulpfuncties.dart';
+import '../models/keten.dart';
+import '../services/opslag.dart';
 import '../schermen/bezoek_formulier.dart';
 import '../schermen/contact_formulier.dart';
 import '../schermen/relatie_formulier.dart';
@@ -265,8 +267,7 @@ class DetailPaneel extends StatelessWidget {
   Future<void> verwijderBezoek(BuildContext context, Bezoek bezoek) async {
     bool zeker = await vraagBevestiging(context, 'Bezoek verwijderen?', 'Dit kan je niet ongedaan maken.');
     if (zeker) {
-      opslag.verwijderBezoek(contact, bezoek);
-      opslag.bijgewerkt();
+      await opslag.verwijderBezoek(contact, bezoek);
     }
   }
 

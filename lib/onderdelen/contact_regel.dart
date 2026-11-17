@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/hulpfuncties.dart';
+import '../models/contact.dart';
+import '../utils/hulpfuncties.dart';
 import 'vorm.dart';
 
 class ContactRegel extends StatelessWidget {

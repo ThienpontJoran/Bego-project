@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/opslag.dart';
+import '../models/contact.dart';
+import '../models/relatie.dart';
+import '../services/opslag.dart';
 import '../onderdelen/contact_regel.dart';
 import '../onderdelen/kopje.dart';
 import 'partner_kiezer.dart';
@@ -49,18 +50,18 @@ class _RelatieFormulierState extends State<RelatieFormulier> {
     }
   }
 
-  void opslaan() {
-    opslag.voegRelatieToe(widget.contact, partner!,
+  Future<void> opslaan() async {
+    await opslag.voegRelatieToe(widget.contact, partner!,
         bevestigd: bevestigd, opmerking: opmerking.text.trim(), kleur: kleur);
-    opslag.bijgewerkt();
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
   Future<void> verwijderen() async {
     bool zeker = await vraagBevestiging(context, 'Relatie verwijderen?', 'De lijn op de kaart verdwijnt.');
     if (!zeker || !mounted) return;
-    opslag.verwijderRelatie(widget.bestaand!);
-    opslag.bijgewerkt();
+    await opslag.verwijderRelatie(widget.bestaand!);
+    if (!mounted) return;
     Navigator.pop(context);
   }
 

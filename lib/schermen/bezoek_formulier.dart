@@ -2,9 +2,10 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/hulpfuncties.dart';
-import '../gegevens/opslag.dart';
+import '../models/bezoek.dart';
+import '../models/contact.dart';
+import '../utils/hulpfuncties.dart';
+import '../services/opslag.dart';
 import '../onderdelen/interesse_kiezer.dart';
 import '../onderdelen/kopje.dart';
 import 'venster.dart';
@@ -41,7 +42,7 @@ class _BezoekFormulierState extends State<BezoekFormulier> {
     );
   }
 
-  void opslaan() {
+  Future<void> opslaan() async {
     Bezoek bezoek = Bezoek(
       datum: datum,
       soort: soort,
@@ -50,8 +51,8 @@ class _BezoekFormulierState extends State<BezoekFormulier> {
       volgendeStapDatum: stapDatum,
       interesseNa: interesse,
     );
-    opslag.voegBezoekToe(widget.contact, bezoek);
-    opslag.bijgewerkt();
+    await opslag.voegBezoekToe(widget.contact, bezoek);
+    if (!mounted) return;
     Navigator.pop(context);
   }
 

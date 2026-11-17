@@ -1,9 +1,11 @@
 // Verzonnen contacten om de app te testen. Namen en gegevens bestaan niet echt.
+// Alleen voor de tests: de echte app haalt zijn gegevens uit Supabase.
 
 import 'package:latlong2/latlong.dart';
 
-import 'contact.dart';
-import 'opslag.dart';
+import 'package:bego_netwerkkaart/models/bezoek.dart';
+import 'package:bego_netwerkkaart/models/contact.dart';
+import 'package:bego_netwerkkaart/services/opslag.dart';
 
 void vulTestgegevens(Opslag opslag) {
   // ---------- Chirurgen ----------

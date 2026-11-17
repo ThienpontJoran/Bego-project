@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
+import '../models/contact.dart';
 
 class Vorm extends StatelessWidget {
   final Soort soort;

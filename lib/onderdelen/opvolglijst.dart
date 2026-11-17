@@ -2,9 +2,10 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/hulpfuncties.dart';
-import '../gegevens/opslag.dart';
+import '../models/bezoek.dart';
+import '../models/contact.dart';
+import '../utils/hulpfuncties.dart';
+import '../services/opslag.dart';
 import 'contact_regel.dart';
 
 class OpvolgLijst extends StatelessWidget {

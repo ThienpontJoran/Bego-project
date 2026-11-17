@@ -6,10 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/filters.dart';
-import '../gegevens/keten.dart';
-import '../gegevens/opslag.dart';
+import '../models/contact.dart';
+import '../models/filters.dart';
+import '../models/keten.dart';
+import '../services/inlog_service.dart';
+import '../services/opslag.dart';
 import '../onderdelen/contactenlijst.dart';
 import '../onderdelen/detail_paneel.dart';
 import '../onderdelen/kaart.dart';
@@ -36,6 +37,39 @@ class _HoofdschermState extends State<Hoofdscherm> {
   int mobielTabblad = 0; // gsm: 0 = kaart, 1 = contacten, 2 = ketens, 3 = opvolging
   MapController kaartController = MapController();
   TextEditingController zoekController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    opslag.addListener(toonFoutmelding);
+    // Net ingelogd: alles ophalen uit de database (in de tests niet).
+    if (opslag.bewaarInDatabase) opslag.laadAlles();
+  }
+
+  @override
+  void dispose() {
+    opslag.removeListener(toonFoutmelding);
+    super.dispose();
+  }
+
+  // Ging er iets mis met de database? Dan tonen we onderaan een melding.
+  void toonFoutmelding() {
+    String? melding = opslag.foutmelding;
+    if (melding == null) return;
+    opslag.foutmelding = null;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(melding)));
+  }
+
+  Future<void> uitloggen() async {
+    bool zeker = await vraagBevestiging(context, 'Uitloggen?', 'Je moet daarna opnieuw inloggen.');
+    if (!zeker) return;
+    await inlogService.logUit();
+    opslag.leegMaken();
+  }
+
+  Widget uitlogKnop() {
+    return IconButton(tooltip: 'Uitloggen', onPressed: uitloggen, icon: const Icon(Icons.logout));
+  }
 
   bool isBreed() {
     return MediaQuery.of(context).size.width >= 900;
@@ -169,6 +203,11 @@ class _HoofdschermState extends State<Hoofdscherm> {
         if (gekozen != null && !opslag.contacten.contains(gekozen)) gekozen = null;
         gekozenKeten = vernieuwdeKeten();
 
+        // De eerste keer laden: een draaiend wieltje.
+        if (opslag.aanHetLaden && opslag.contacten.isEmpty) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
         if (isBreed()) return breedScherm();
         return smalScherm();
       },
@@ -213,7 +252,15 @@ class _HoofdschermState extends State<Hoofdscherm> {
     ]);
 
     Widget contactenTab = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const SizedBox(height: 12),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+        child: Row(children: [
+          Expanded(
+            child: Text('${opslag.contacten.length} contacten', style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          uitlogKnop(),
+        ]),
+      ),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: zoekveld()),
       Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 4), child: soortKnoppen()),
       Expanded(child: lijstVoorTabblad(0)),
@@ -273,13 +320,14 @@ class _HoofdschermState extends State<Hoofdscherm> {
         child: Row(children: [
           logo(),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Bego Netwerkkaart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              Text('Testversie · voorbeeldgegevens', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const Text('Bego Netwerkkaart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Text('${opslag.contacten.length} contacten', style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ]),
           ),
           FilledButton.icon(onPressed: nieuwContact, icon: const Icon(Icons.add), label: const Text('Nieuw')),
+          uitlogKnop(),
         ]),
       ),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: zoekveld()),

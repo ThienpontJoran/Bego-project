@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../gegevens/adres_zoeker.dart';
-import '../gegevens/contact.dart';
-import '../gegevens/opslag.dart';
+import '../services/adres_zoeker.dart';
+import '../models/contact.dart';
+import '../services/opslag.dart';
 import '../onderdelen/adres_veld.dart';
 import '../onderdelen/interesse_kiezer.dart';
 import '../onderdelen/kopje.dart';
@@ -109,7 +109,6 @@ class _ContactFormulierState extends State<ContactFormulier> {
     Contact contact;
     if (bestaand == null) {
       contact = Contact(soort: soort, naam: '', adres: '', plaats: plaats, interesse: interesse);
-      opslag.voegContactToe(contact);
     } else {
       contact = bestaand;
     }
@@ -129,8 +128,10 @@ class _ContactFormulierState extends State<ContactFormulier> {
     for (Contact partner in partners) {
       if (partner.soort != soort) geldigePartners.add(partner);
     }
-    opslag.zetPartners(contact, geldigePartners);
-    opslag.bijgewerkt();
+    // Eerst het contact bewaren, dan pas de relaties (die verwijzen naar het contact).
+    await opslag.bewaarContact(contact);
+    await opslag.zetPartners(contact, geldigePartners);
+    if (!mounted) return;
 
     Navigator.pop(context, contact);
   }
@@ -152,8 +153,8 @@ class _ContactFormulierState extends State<ContactFormulier> {
       '${widget.bestaand!.naam} en al zijn relaties en bezoeken worden verwijderd.',
     );
     if (!zeker || !mounted) return;
-    opslag.verwijderContact(widget.bestaand!);
-    opslag.bijgewerkt();
+    await opslag.verwijderContact(widget.bestaand!);
+    if (!mounted) return;
     Navigator.pop(context);
   }
 

@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/hulpfuncties.dart';
-import '../gegevens/opslag.dart';
+import '../models/contact.dart';
+import '../utils/hulpfuncties.dart';
+import '../services/opslag.dart';
 import '../onderdelen/contact_regel.dart';
 import 'contact_formulier.dart';
 import 'venster.dart';

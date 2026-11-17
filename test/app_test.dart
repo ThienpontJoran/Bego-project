@@ -4,18 +4,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bego_netwerkkaart/gegevens/adres_zoeker.dart';
-import 'package:bego_netwerkkaart/gegevens/contact.dart';
-import 'package:bego_netwerkkaart/gegevens/hulpfuncties.dart';
-import 'package:bego_netwerkkaart/gegevens/keten.dart';
-import 'package:bego_netwerkkaart/gegevens/opslag.dart';
 import 'package:bego_netwerkkaart/main.dart';
+import 'package:bego_netwerkkaart/models/bezoek.dart';
+import 'package:bego_netwerkkaart/models/contact.dart';
+import 'package:bego_netwerkkaart/models/keten.dart';
+import 'package:bego_netwerkkaart/models/relatie.dart';
+import 'package:bego_netwerkkaart/schermen/hoofdscherm.dart';
+import 'package:bego_netwerkkaart/services/adres_zoeker.dart';
+import 'package:bego_netwerkkaart/services/opslag.dart';
+import 'package:bego_netwerkkaart/utils/hulpfuncties.dart';
+
+import 'testgegevens.dart';
 
 Contact zoek(String naam) {
   return opslag.contacten.firstWhere((contact) => contact.naam == naam);
 }
 
 void main() {
+  // De tests werken zonder database: alles blijft in het geheugen.
+  setUpAll(() {
+    opslag.bewaarInDatabase = false;
+    vulTestgegevens(opslag);
+  });
+
   test('zoeken negeert hoofdletters, accenten en dubbele letters', () {
     Contact peeters = zoek('Dr. An Peeters');
     expect(pastBijZoekterm(peeters, 'peters'), true);
@@ -89,6 +100,22 @@ void main() {
     expect(maes.langNietBezocht, false);
   });
 
+  test('contact en bezoek blijven gelijk na heen en terug naar de database', () {
+    Contact janssens = zoek('Dr. Koen Janssens');
+    Contact kopie = Contact.vanDatabase(janssens.naarDatabase());
+    expect(kopie.id, janssens.id);
+    expect(kopie.soort, janssens.soort);
+    expect(kopie.plaats, janssens.plaats);
+    expect(kopie.merken, janssens.merken);
+    expect(kopie.interesse, janssens.interesse);
+
+    Bezoek bezoek = janssens.bezoeken.first;
+    Bezoek bezoekKopie = Bezoek.vanDatabase(bezoek.naarDatabase(janssens));
+    expect(bezoekKopie.datum, bezoek.datum);
+    expect(bezoekKopie.soort, bezoek.soort);
+    expect(bezoekKopie.verslag, bezoek.verslag);
+  });
+
   test('adres netjes opmaken uit een suggestie', () {
     Map<String, dynamic> huis = {
       'type': 'house', 'street': 'Grote Markt - Grand-Place', 'housenumber': '12',
@@ -102,7 +129,7 @@ void main() {
   testWidgets('merken: bestaande merken als suggestie, nieuw merk toevoegen', (tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
-    await tester.pumpWidget(const BegoApp());
+    await tester.pumpWidget(const BegoApp(beginScherm: Hoofdscherm()));
     await tester.tap(find.text('Nieuw'));
     await tester.pumpAndSettle();
 
@@ -126,7 +153,7 @@ void main() {
   testWidgets('klikken op een lijn opent de relatie', (tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
-    await tester.pumpWidget(const BegoApp());
+    await tester.pumpWidget(const BegoApp(beginScherm: Hoofdscherm()));
     await tester.pumpAndSettle();
 
     // De langste lijn op het scherm zoeken en in het midden ervan klikken.
@@ -152,7 +179,7 @@ void main() {
   testWidgets('gsm: app start op met tabbladen', (tester) async {
     tester.view.physicalSize = const Size(400, 850);
     tester.view.devicePixelRatio = 1;
-    await tester.pumpWidget(const BegoApp());
+    await tester.pumpWidget(const BegoApp(beginScherm: Hoofdscherm()));
     expect(find.text('Opvolging'), findsOneWidget);
 
     await tester.tap(find.text('Contacten'));
@@ -170,7 +197,7 @@ void main() {
   testWidgets('laptop: detailpaneel en formulieren openen', (tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
-    await tester.pumpWidget(const BegoApp());
+    await tester.pumpWidget(const BegoApp(beginScherm: Hoofdscherm()));
 
     await tester.tap(find.text('Dr. An Peeters'));
     await tester.pumpAndSettle();

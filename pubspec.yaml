@@ -17,6 +17,8 @@ dependencies:
   http: ^1.6.0
   flutter_localizations:
     sdk: flutter
+  supabase_flutter: ^2.18.3
+  uuid: ^4.6.0
 
 # Pakketten die je alleen nodig hebt tijdens het programmeren
 dev_dependencies:

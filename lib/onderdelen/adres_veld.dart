@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/adres_zoeker.dart';
+import '../services/adres_zoeker.dart';
 
 class AdresVeld extends StatefulWidget {
   final TextEditingController controller;

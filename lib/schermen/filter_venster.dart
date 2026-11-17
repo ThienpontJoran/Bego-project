@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/filters.dart';
-import '../gegevens/keten.dart';
+import '../models/contact.dart';
+import '../models/filters.dart';
+import '../models/keten.dart';
 import '../onderdelen/kopje.dart';
 
 class FilterVenster extends StatefulWidget {

@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
+import '../models/contact.dart';
 
 class InteresseKiezer extends StatelessWidget {
   final Interesse waarde;

@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/keten.dart';
-import '../gegevens/opslag.dart';
+import '../models/contact.dart';
+import '../models/relatie.dart';
+import '../models/keten.dart';
+import '../services/opslag.dart';
 import '../instellingen.dart';
 import '../schermen/keten_naam_venster.dart';
 import '../schermen/relatie_formulier.dart';

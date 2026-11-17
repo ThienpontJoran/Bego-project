@@ -1,9 +1,9 @@
 // Welke contacten getoond worden: zoekterm, type, kleur, ketenstatus...
 
 import 'contact.dart';
-import 'hulpfuncties.dart';
+import '../utils/hulpfuncties.dart';
 import 'keten.dart';
-import 'opslag.dart';
+import '../services/opslag.dart';
 
 class Filters {
   String zoekterm = '';

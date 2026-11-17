@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/opslag.dart';
+import '../models/contact.dart';
+import '../services/opslag.dart';
 import '../onderdelen/detail_paneel.dart';
 
 class DetailPagina extends StatefulWidget {

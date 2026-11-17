@@ -2,15 +2,31 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'schermen/hoofdscherm.dart';
+import 'instellingen.dart';
+import 'schermen/inlog_scherm.dart';
 
-void main() {
+// "async" omdat we eerst moeten wachten tot de verbinding met Supabase klaar is.
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (supabaseAdres.isEmpty || supabaseSleutel.isEmpty) {
+    runApp(const MaterialApp(
+      home: Scaffold(body: Center(child: Text('SUPABASE_URL of SUPABASE_SLEUTEL ontbreekt in .env'))),
+    ));
+    return;
+  }
+
+  await Supabase.initialize(url: supabaseAdres, anonKey: supabaseSleutel);
   runApp(const BegoApp());
 }
 
 class BegoApp extends StatelessWidget {
-  const BegoApp({super.key});
+  // Het eerste scherm. Normaal de inlogpoort; de tests openen meteen het hoofdscherm.
+  final Widget beginScherm;
+
+  const BegoApp({super.key, this.beginScherm = const InlogPoort()});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +38,7 @@ class BegoApp extends StatelessWidget {
       locale: const Locale('nl', 'BE'),
       supportedLocales: const [Locale('nl', 'BE')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const Hoofdscherm(),
+      home: beginScherm,
     );
   }
 }

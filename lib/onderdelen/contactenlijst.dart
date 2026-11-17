@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
-import '../gegevens/hulpfuncties.dart';
+import '../models/bezoek.dart';
+import '../models/contact.dart';
+import '../utils/hulpfuncties.dart';
 import 'contact_regel.dart';
 
 class ContactenLijst extends StatelessWidget {

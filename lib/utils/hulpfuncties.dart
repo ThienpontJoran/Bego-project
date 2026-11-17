@@ -1,6 +1,6 @@
 // Kleine hulpfuncties voor datums, teksten en zoeken.
 
-import 'contact.dart';
+import '../models/contact.dart';
 
 // Vandaag om middernacht (zonder uur).
 DateTime vandaag() {

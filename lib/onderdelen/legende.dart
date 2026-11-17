@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/contact.dart';
+import '../models/contact.dart';
 import 'vorm.dart';
 
 class Legende extends StatefulWidget {

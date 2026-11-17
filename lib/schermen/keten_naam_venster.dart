@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../gegevens/keten.dart';
-import '../gegevens/opslag.dart';
+import '../models/keten.dart';
+import '../services/opslag.dart';
 
 Future<void> hernoemKeten(BuildContext context, Keten keten) async {
   TextEditingController invoer = TextEditingController(text: keten.naam);
@@ -31,6 +31,5 @@ Future<void> hernoemKeten(BuildContext context, Keten keten) async {
   );
 
   if (nieuweNaam == null) return; // geannuleerd
-  opslag.zetKetenNaam(keten.middelpunt, nieuweNaam);
-  opslag.bijgewerkt();
+  await opslag.zetKetenNaam(keten.middelpunt, nieuweNaam);
 }
