@@ -1,6 +1,6 @@
 -- De database van de Bego Netwerkkaart.
 -- Gebruik: Supabase > SQL Editor > New query > dit hele bestand plakken > Run.
--- Je hoeft dit maar één keer te doen.
+-- Je hoeft dit maar één keer te doen. Daarna: 2_eigen_gegevens.sql.
 
 -- ---------- Tabellen ----------
 
