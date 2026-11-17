@@ -78,6 +78,10 @@ ThemeData maakThema() {
         borderSide: BorderSide(color: kleuren.outlineVariant),
       ),
     ),
+    // Gele tekst op wit is slecht leesbaar: tekst-knoppen en gekozen regels worden donkergrijs.
+    textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: begoDonkergrijs)),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(foregroundColor: begoDonkergrijs)),
+    listTileTheme: const ListTileThemeData(selectedColor: Color(0xFF1F1F1F)),
     chipTheme: ChipThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
   );
 }
