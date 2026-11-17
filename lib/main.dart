@@ -46,19 +46,22 @@ class BegoApp extends StatelessWidget {
 
 // De stijl van de hele app: kleuren, afgeronde hoeken, invulvelden.
 ThemeData maakThema() {
-  // Geel en grijs zoals het logo van Bego.
-  // "neutral" = rustige grijze achtergronden; knoppen worden geel met donkere tekst.
+  // Wit en grijs, met geel voor de knoppen (zoals het logo van Bego).
+  // "monochrome" = alle achtergronden zuiver wit/grijs, zonder een geel of beige tintje.
   ColorScheme kleuren = ColorScheme.fromSeed(
-    seedColor: begoGeel,
-    dynamicSchemeVariant: DynamicSchemeVariant.neutral,
+    seedColor: begoGrijs,
+    dynamicSchemeVariant: DynamicSchemeVariant.monochrome,
     primary: begoGeel,
     onPrimary: const Color(0xFF1F1F1F),
+    surface: Colors.white,
+    primaryContainer: const Color(0xFFEEEEEE), // achtergrond van het gekozen contact in de lijst
+    onPrimaryContainer: const Color(0xFF1F1F1F),
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: kleuren,
-    scaffoldBackgroundColor: kleuren.surfaceContainerLow,
+    scaffoldBackgroundColor: Colors.white,
     appBarTheme: AppBarTheme(backgroundColor: kleuren.surface, surfaceTintColor: Colors.transparent),
     cardTheme: CardThemeData(
       elevation: 0,
