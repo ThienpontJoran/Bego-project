@@ -1,0 +1,23 @@
+name: Database wakker houden
+
+# Het gratis plan van Supabase pauzeert een project na een week zonder gebruik.
+# Deze taak klopt om de 3 dagen even aan bij de database, zodat dat niet gebeurt.
+# Ze leest niets: zonder login geeft de database altijd een lege lijst terug (RLS).
+
+on:
+  schedule:
+    - cron: '0 7 */3 * *' # om de 3 dagen om 7 uur (UTC)
+  workflow_dispatch: # zo kan je ze ook zelf starten via het tabblad Actions
+
+permissions:
+  contents: read
+
+jobs:
+  seintje:
+    runs-on: ubuntu-latest
+    steps:
+      # --fail: de taak mislukt (en je krijgt een e-mail van GitHub) als de database niet antwoordt.
+      - run: curl --fail --silent --show-error "$SUPABASE_URL/rest/v1/contacten?select=id&limit=1" -H "apikey: $SUPABASE_SLEUTEL"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SLEUTEL: ${{ secrets.SUPABASE_SLEUTEL }}
