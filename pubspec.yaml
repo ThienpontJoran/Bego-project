@@ -28,3 +28,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Afbeeldingen die in de app gebruikt worden (logo's van Bego).
+  assets:
+    - images/

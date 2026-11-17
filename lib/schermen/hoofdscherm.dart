@@ -255,6 +255,8 @@ class _HoofdschermState extends State<Hoofdscherm> {
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
         child: Row(children: [
+          logo(),
+          const SizedBox(width: 10),
           Expanded(
             child: Text('${opslag.contacten.length} contacten', style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
@@ -318,12 +320,13 @@ class _HoofdschermState extends State<Hoofdscherm> {
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
         child: Row(children: [
-          logo(),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Bego Netwerkkaart', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              Text('${opslag.contacten.length} contacten', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              // Logo met de tekst "BEGO" erbij.
+              Image.asset('images/logo_met_tekst.png', height: 30),
+              const SizedBox(height: 2),
+              Text('Netwerkkaart · ${opslag.contacten.length} contacten',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
             ]),
           ),
           FilledButton.icon(onPressed: nieuwContact, icon: const Icon(Icons.add), label: const Text('Nieuw')),
@@ -356,16 +359,9 @@ class _HoofdschermState extends State<Hoofdscherm> {
     return ContactenLijst(contacten: gefilterdeContacten(), gekozen: gekozen, onKies: kiesUitLijst);
   }
 
+  // Het logo van Bego (zonder tekst). De afbeeldingen staan in de map "images".
   Widget logo() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(Icons.hub, color: Theme.of(context).colorScheme.onPrimary),
-    );
+    return Image.asset('images/logo.jpg', width: 36, height: 36);
   }
 
   Widget zoekveld() {

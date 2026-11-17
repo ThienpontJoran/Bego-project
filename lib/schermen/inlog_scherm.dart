@@ -71,12 +71,13 @@ class _InlogSchermState extends State<InlogScherm> {
                 padding: const EdgeInsets.all(24),
                 child: AutofillGroup(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Icon(Icons.hub, size: 40, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 12),
+                    // Logo van Bego met de tekst erbij (uit de map "images").
+                    Image.asset('images/logo_met_tekst.png', height: 60),
+                    const SizedBox(height: 8),
                     const Text(
-                      'Bego Netwerkkaart',
+                      'Netwerkkaart',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.grey),
                     ),
                     const SizedBox(height: 24),
                     TextField(
