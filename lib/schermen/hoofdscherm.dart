@@ -310,11 +310,8 @@ class _HoofdschermState extends State<Hoofdscherm> {
   }
 
   Widget zijbalk() {
-    // Aantallen voor op de tabbladen.
-    int aantalBijna = 0;
-    for (Keten keten in opslag.ketens) {
-      if (keten.status == KetenStatus.bijna) aantalBijna++;
-    }
+    // Aantal ketens voor op het tabblad.
+    int aantalKetens = opslag.ketens.length;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Padding(
@@ -341,7 +338,7 @@ class _HoofdschermState extends State<Hoofdscherm> {
           showSelectedIcon: false,
           segments: [
             const ButtonSegment(value: 0, label: Text('Contacten')),
-            ButtonSegment(value: 1, label: Text('Ketens ($aantalBijna)')),
+            ButtonSegment(value: 1, label: Text('Ketens ($aantalKetens)')),
             const ButtonSegment(value: 2, label: Text('Opvolging')),
           ],
           selected: {tabblad},

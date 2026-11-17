@@ -221,7 +221,7 @@ void main() {
     await tester.tap(find.text('Toon resultaten'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Ketens (2)'));
+    await tester.tap(find.text('Ketens (6)'));
     await tester.pumpAndSettle();
     expect(find.text('Ontbreekt'), findsWidgets);
 

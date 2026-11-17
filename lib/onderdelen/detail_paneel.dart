@@ -6,6 +6,7 @@ import '../models/bezoek.dart';
 import '../models/contact.dart';
 import '../models/relatie.dart';
 import '../utils/hulpfuncties.dart';
+import '../utils/kleuren.dart';
 import '../models/keten.dart';
 import '../services/opslag.dart';
 import '../schermen/bezoek_formulier.dart';
@@ -115,7 +116,7 @@ class DetailPaneel extends StatelessWidget {
             fontSize: 12,
             letterSpacing: 1,
             fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.primary,
+            color: begoDonkergrijs,
           ),
         ),
         const SizedBox(height: 8),

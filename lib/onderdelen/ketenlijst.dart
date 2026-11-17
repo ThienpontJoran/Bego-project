@@ -1,4 +1,5 @@
-// Lijst met ketens. Bovenaan de "bijna-ketens": daar is iedereen mee op één na.
+// Lijst met alle ketens. Bovenaan de ketens met de meeste Bego-gebruikers,
+// onderaan de ketens waar nog niemand Bego gebruikt.
 
 import 'package:flutter/material.dart';
 
@@ -17,40 +18,28 @@ class KetenLijst extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Keten> bijna = [];
-    List<Keten> volledig = [];
-    List<Keten> open = [];
-    for (Keten keten in opslag.ketens) {
-      if (keten.status == KetenStatus.bijna) bijna.add(keten);
-      if (keten.status == KetenStatus.volledig) volledig.add(keten);
-      if (keten.status == KetenStatus.open) open.add(keten);
-    }
-    // Open ketens: wie het verst staat, eerst.
-    open.sort((a, b) => aandeelMee(b).compareTo(aandeelMee(a)));
+    // Sorteren: meeste Bego-gebruikers bovenaan.
+    // Evenveel? Dan eerst de keten waar het grootste deel mee is (3 van 3 voor 3 van 5).
+    List<Keten> ketens = opslag.ketens;
+    ketens.sort((a, b) {
+      if (a.aantalMee != b.aantalMee) return b.aantalMee.compareTo(a.aantalMee);
+      return aandeelMee(b).compareTo(aandeelMee(a));
+    });
 
     List<Widget> delen = [
       const Padding(
-        padding: EdgeInsets.fromLTRB(8, 12, 8, 0),
+        padding: EdgeInsets.fromLTRB(8, 12, 8, 12),
         child: Text(
-          'Een keten is een chirurg met al zijn tandartsen en hun labo\'s.',
+          "Een keten is een chirurg met al zijn tandartsen en hun labo's. "
+          'Bovenaan staan de ketens met de meeste Bego-gebruikers.',
           style: TextStyle(color: Colors.grey),
         ),
       ),
     ];
-
-    delen.add(titel('Bijna Bego (${bijna.length})', 'Iedereen is mee op één na. Eén bezoek maakt de keten volledig.'));
-    if (bijna.isEmpty) delen.add(const Padding(padding: EdgeInsets.all(8), child: Text('Geen bijna-ketens.')));
-    for (Keten keten in bijna) {
-      delen.add(ketenKaart(context, keten));
+    if (ketens.isEmpty) {
+      delen.add(const Padding(padding: EdgeInsets.all(8), child: Text('Nog geen ketens.')));
     }
-
-    delen.add(titel('Volledig Bego (${volledig.length})', 'Alle contacten in de keten gebruiken Bego.'));
-    for (Keten keten in volledig) {
-      delen.add(ketenKaart(context, keten));
-    }
-
-    delen.add(titel('Open (${open.length})', 'Twee of meer contacten zijn nog niet mee.'));
-    for (Keten keten in open) {
+    for (Keten keten in ketens) {
       delen.add(ketenKaart(context, keten));
     }
 
@@ -60,16 +49,6 @@ class KetenLijst extends StatelessWidget {
   // Bv. 3 van 4 mee = 0.75
   double aandeelMee(Keten keten) {
     return keten.aantalMee / keten.leden.length;
-  }
-
-  Widget titel(String tekst, String uitleg) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 20, 8, 8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(tekst, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        Text(uitleg, style: const TextStyle(color: Colors.grey)),
-      ]),
-    );
   }
 
   Widget ketenKaart(BuildContext context, Keten keten) {

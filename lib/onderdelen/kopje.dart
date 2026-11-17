@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../utils/kleuren.dart';
+
 Widget kopje(BuildContext context, String tekst) {
   return Padding(
     padding: const EdgeInsets.only(top: 20, bottom: 8),
@@ -11,7 +13,7 @@ Widget kopje(BuildContext context, String tekst) {
         fontSize: 13,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.3,
-        color: Theme.of(context).colorScheme.primary,
+        color: begoDonkergrijs,
       ),
     ),
   );

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'instellingen.dart';
 import 'schermen/inlog_scherm.dart';
+import 'utils/kleuren.dart';
 
 // "async" omdat we eerst moeten wachten tot de verbinding met Supabase klaar is.
 Future<void> main() async {
@@ -45,7 +46,14 @@ class BegoApp extends StatelessWidget {
 
 // De stijl van de hele app: kleuren, afgeronde hoeken, invulvelden.
 ThemeData maakThema() {
-  ColorScheme kleuren = ColorScheme.fromSeed(seedColor: const Color(0xFF0B6E69));
+  // Geel en grijs zoals het logo van Bego.
+  // "neutral" = rustige grijze achtergronden; knoppen worden geel met donkere tekst.
+  ColorScheme kleuren = ColorScheme.fromSeed(
+    seedColor: begoGeel,
+    dynamicSchemeVariant: DynamicSchemeVariant.neutral,
+    primary: begoGeel,
+    onPrimary: const Color(0xFF1F1F1F),
+  );
 
   return ThemeData(
     useMaterial3: true,
