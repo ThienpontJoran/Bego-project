@@ -52,10 +52,6 @@ class DetailPaneel extends StatelessWidget {
     List<Widget> labels = [
       Label(tekst: interesseTekst(contact.interesse), kleur: interesseKleur(contact.interesse)),
     ];
-    KetenStatus? status = opslag.besteKetenStatus(contact);
-    if (status != null) {
-      labels.add(Label(tekst: 'Keten: ${ketenStatusTekst(status)}', kleur: ketenStatusKleur(status)));
-    }
     if (contact.langNietBezocht) {
       labels.add(const Label(tekst: 'Lang niet bezocht', kleur: Color(0xFFD32F2F)));
     }

@@ -30,8 +30,7 @@ class KetenLijst extends StatelessWidget {
       const Padding(
         padding: EdgeInsets.fromLTRB(8, 12, 8, 12),
         child: Text(
-          "Een keten is een chirurg met al zijn tandartsen en hun labo's. "
-          'Bovenaan staan de ketens met de meeste Bego-gebruikers.',
+          "Een keten is een chirurg met al zijn tandartsen en hun labo's.",
           style: TextStyle(color: Colors.grey),
         ),
       ),

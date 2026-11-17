@@ -264,17 +264,6 @@ class Opslag extends ChangeNotifier {
     }
     return resultaat;
   }
-
-  // De beste status van alle ketens waar het contact in zit (null = geen keten).
-  KetenStatus? besteKetenStatus(Contact contact) {
-    KetenStatus? beste;
-    for (Keten keten in ketensVan(contact)) {
-      if (keten.status == KetenStatus.volledig) return KetenStatus.volledig;
-      if (keten.status == KetenStatus.bijna) beste = KetenStatus.bijna;
-      if (keten.status == KetenStatus.open && beste == null) beste = KetenStatus.open;
-    }
-    return beste;
-  }
 }
 
 // Eén gedeelde opslag voor de hele app.
