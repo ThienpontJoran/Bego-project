@@ -17,7 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # --fail: de taak mislukt (en je krijgt een e-mail van GitHub) als de database niet antwoordt.
-      - run: curl --fail --silent --show-error "$SUPABASE_URL/rest/v1/contacten?select=id&limit=1" -H "apikey: $SUPABASE_SLEUTEL"
+      - run: |
+          curl --fail --silent --show-error "$SUPABASE_URL/rest/v1/contacten?select=id&limit=1" -H "apikey: $SUPABASE_SLEUTEL"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SLEUTEL: ${{ secrets.SUPABASE_SLEUTEL }}
