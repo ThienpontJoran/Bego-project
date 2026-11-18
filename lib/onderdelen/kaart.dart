@@ -12,6 +12,7 @@ import '../instellingen.dart';
 import '../schermen/keten_naam_venster.dart';
 import '../schermen/relatie_formulier.dart';
 import '../schermen/venster.dart';
+import 'kaart_rekenen.dart';
 import 'label.dart';
 import 'legende.dart';
 import 'vorm.dart';
@@ -98,10 +99,10 @@ class Kaart extends StatelessWidget {
             ),
           ),
           // 3. Vormen van de contacten
-          // (Builder: zo weten we de huidige zoom, om namen te tonen als je inzoomt.)
+          // (Builder: zo weten we de huidige zoom, om namen te tonen en groepjes te maken.)
           Builder(builder: (context) {
-            double zoom = MapCamera.of(context).zoom;
-            return MarkerLayer(markers: maakIconen(zoom, uitgelicht));
+            MapCamera camera = MapCamera.of(context);
+            return MarkerLayer(markers: maakIconen(context, camera, uitgelicht));
           }),
           // 4. Plaatsnamen bovenop, zodat vormen ze niet bedekken.
           //    IgnorePointer: klikken gaan door deze laag heen naar de vormen eronder.
@@ -193,11 +194,18 @@ class Kaart extends StatelessWidget {
   }
 
   List<Polyline<Relatie>> maakLijnen(List<Contact> uitgelicht) {
-    List<Polyline<Relatie>> lijnen = [];
+    // Alleen lijnen tussen twee zichtbare contacten.
+    List<Relatie> zichtbaar = [];
     for (Relatie relatie in opslag.relaties) {
-      // Alleen lijnen tussen twee zichtbare contacten.
-      if (!contacten.contains(relatie.eerste) || !contacten.contains(relatie.tweede)) continue;
+      if (contacten.contains(relatie.eerste) && contacten.contains(relatie.tweede)) {
+        zichtbaar.add(relatie);
+      }
+    }
+    // Elke lijn een eigen bocht, zodat lijnen naast elkaar niet op elkaar liggen.
+    Map<Relatie, double> bochten = bochtenVoor(zichtbaar);
 
+    List<Polyline<Relatie>> lijnen = [];
+    for (Relatie relatie in zichtbaar) {
       // Standaard grijs; een lijn met een eigen kleur is iets dikker zodat je ze goed ziet.
       Color kleur = const Color(0xFF546E7A).withValues(alpha: 0.7);
       double dikte = 2;
@@ -223,7 +231,7 @@ class Kaart extends StatelessWidget {
 
       lijnen.add(Polyline<Relatie>(
         hitValue: relatie, // zo weten we welke relatie je aanklikt
-        points: [relatie.eerste.plaats, relatie.tweede.plaats],
+        points: boog(relatie.eerste.plaats, relatie.tweede.plaats, bochten[relatie]!),
         color: kleur,
         strokeWidth: dikte,
         pattern: stijl,
@@ -232,22 +240,119 @@ class Kaart extends StatelessWidget {
     return lijnen;
   }
 
-  List<Marker> maakIconen(double zoom, List<Contact> uitgelicht) {
-    // Grijze contacten eerst tekenen, oplichtende erna (zo liggen die bovenop).
-    List<Marker> achteraan = [];
-    List<Marker> vooraan = [];
+  // Hoe dicht (in pixels) twee icoontjes mogen liggen voor ze samen een groepje worden.
+  static const double groepAfstand = 30;
+
+  List<Marker> maakIconen(BuildContext context, MapCamera camera, List<Contact> uitgelicht) {
+    double zoom = camera.zoom;
     bool ietsGekozen = uitgelicht.isNotEmpty;
+
+    // Oplichtende contacten (het gekozen contact, zijn partners, een keten) komen nooit
+    // in een groepje: die wil je altijd los zien. De rest wordt gegroepeerd.
+    List<Contact> losTonen = [];
+    List<Contact> teGroeperen = [];
     for (Contact contact in contacten) {
-      bool actief = isActief(contact, uitgelicht);
-      Marker icoon = maakIcoon(contact, actief, ietsGekozen, zoom);
-      if (actief && ietsGekozen) {
-        vooraan.add(icoon);
+      if (ietsGekozen && isActief(contact, uitgelicht)) {
+        losTonen.add(contact);
       } else {
-        achteraan.add(icoon);
+        teGroeperen.add(contact);
       }
     }
-    achteraan.addAll(vooraan);
-    return achteraan;
+
+    // Grijze/gewone icoontjes eerst tekenen, oplichtende erna (zo liggen die bovenop).
+    List<Marker> iconen = [];
+    List<List<Contact>> groepjes = groepeer(teGroeperen, camera.projectAtZoom, groepAfstand);
+    for (List<Contact> groepje in groepjes) {
+      if (groepje.length == 1) {
+        iconen.add(maakIcoon(groepje.first, !ietsGekozen, ietsGekozen, zoom));
+      } else {
+        iconen.add(maakGroepIcoon(context, groepje, ietsGekozen));
+      }
+    }
+    for (Contact contact in losTonen) {
+      iconen.add(maakIcoon(contact, true, ietsGekozen, zoom));
+    }
+    return iconen;
+  }
+
+  // Een rond bolletje met het aantal contacten erin.
+  Marker maakGroepIcoon(BuildContext context, List<Contact> groepje, bool ietsGekozen) {
+    Color kleur = const Color(0xFF37474F);
+    if (ietsGekozen) kleur = const Color(0xFFB0BEC5); // grijs als er iets anders gekozen is
+
+    return Marker(
+      point: middenVan(groepje),
+      width: 34,
+      height: 34,
+      child: GestureDetector(
+        onTap: () => klikOpGroep(context, groepje),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Tooltip(
+            message: '${groepje.length} contacten · klik om in te zoomen',
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: kleur,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 4)],
+              ),
+              child: Text(
+                '${groepje.length}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Klik op een groepje: inzoomen tot de contacten los van elkaar staan.
+  // Liggen ze zo dicht bij elkaar (bv. hetzelfde gebouw) dat inzoomen niet helpt,
+  // dan krijg je een lijstje om er een te kiezen.
+  void klikOpGroep(BuildContext context, List<Contact> groepje) {
+    List<List<Contact>> opMaxZoom = groepeer(
+      groepje,
+      (plaats) => controller.camera.projectAtZoom(plaats, 18),
+      groepAfstand,
+    );
+    if (opMaxZoom.length == 1) {
+      kiesUitLijst(context, groepje);
+      return;
+    }
+
+    List<LatLng> punten = [];
+    for (Contact contact in groepje) {
+      punten.add(contact.plaats);
+    }
+    controller.fitCamera(CameraFit.coordinates(
+      coordinates: punten,
+      padding: const EdgeInsets.all(80),
+      maxZoom: 18,
+    ));
+  }
+
+  void kiesUitLijst(BuildContext context, List<Contact> groepje) {
+    List<Widget> keuzes = [];
+    for (Contact contact in groepje) {
+      keuzes.add(ListTile(
+        leading: Vorm(soort: contact.soort, kleur: interesseKleur(contact.interesse), grootte: 20),
+        title: Text(contact.naam),
+        onTap: () {
+          Navigator.of(context).pop();
+          onKies(contact);
+        },
+      ));
+    }
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Welk contact bedoel je?'),
+        children: keuzes,
+      ),
+    );
   }
 
   Marker maakIcoon(Contact contact, bool actief, bool ietsGekozen, double zoom) {
