@@ -1,7 +1,8 @@
 // Rekenwerk voor de kaart:
-// - contacten die dicht bij elkaar liggen samen nemen in een groepje (bolletje met een getal);
+// - contacten die dicht bij elkaar liggen uit elkaar duwen (uitwaaieren);
 // - een rechte lijn ombuigen tot een boog, zodat lijnen niet over elkaar liggen.
 
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter_map/flutter_map.dart';
@@ -10,40 +11,63 @@ import 'package:latlong2/latlong.dart';
 import '../models/contact.dart';
 import '../models/relatie.dart';
 
-// Zet de contacten in groepjes. Twee contacten komen in hetzelfde groepje als ze
-// op het scherm minder dan [afstand] pixels van elkaar liggen.
-// [naarPixels] rekent een plaats om naar een punt op het scherm (hangt af van de zoom).
-List<List<Contact>> groepeer(List<Contact> contacten, Offset Function(LatLng plaats) naarPixels, double afstand) {
-  List<List<Contact>> groepjes = [];
-  List<Offset> middens = []; // het punt waar elk groepje begon
-
+// Geeft voor elk contact de plek waar zijn icoontje getekend wordt.
+// Icoontjes die op het scherm minder dan [afstand] pixels van elkaar liggen, worden
+// een beetje uit elkaar geduwd. Dat herhalen we tot niets meer overlapt.
+// [naarPixels] en [naarPlaats] rekenen tussen een plaats en een punt op het scherm
+// (dat hangt af van de zoom, daarom gebeurt dit opnieuw als je in- of uitzoomt).
+Map<Contact, LatLng> uitgewaaierdePlekken(
+  List<Contact> contacten,
+  Offset Function(LatLng plaats) naarPixels,
+  LatLng Function(Offset punt) naarPlaats,
+  double afstand,
+) {
+  // Stap 1: waar staat elk icoontje nu op het scherm?
+  List<Offset> punten = [];
   for (Contact contact in contacten) {
-    Offset punt = naarPixels(contact.plaats);
-    bool geplaatst = false;
-    for (int i = 0; i < groepjes.length; i++) {
-      if ((punt - middens[i]).distance < afstand) {
-        groepjes[i].add(contact);
-        geplaatst = true;
-        break;
+    punten.add(naarPixels(contact.plaats));
+  }
+
+  // Stap 2: twee icoontjes te dicht bij elkaar? Elk een halve stap opzij duwen.
+  // Maximaal 50 rondes; meestal is het na een paar rondes al in orde.
+  List<bool> verschoven = List.filled(contacten.length, false);
+  for (int ronde = 0; ronde < 50; ronde++) {
+    bool ietsGeduwd = false;
+    for (int i = 0; i < punten.length; i++) {
+      for (int j = i + 1; j < punten.length; j++) {
+        Offset verschil = punten[j] - punten[i];
+        double tussen = verschil.distance;
+        if (tussen >= afstand) continue;
+
+        // In welke richting duwen? Liggen ze precies op elkaar (zelfde adres),
+        // dan kiezen we zelf een richting, voor elk contact een andere.
+        Offset richting;
+        if (tussen > 0.01) {
+          richting = verschil / tussen;
+        } else {
+          richting = Offset(cos(j * 2.4), sin(j * 2.4));
+        }
+        Offset duw = richting * ((afstand - tussen) / 2);
+        punten[i] -= duw;
+        punten[j] += duw;
+        verschoven[i] = true;
+        verschoven[j] = true;
+        ietsGeduwd = true;
       }
     }
-    if (!geplaatst) {
-      groepjes.add([contact]);
-      middens.add(punt);
+    if (!ietsGeduwd) break;
+  }
+
+  // Stap 3: terug omrekenen naar plaatsen op de kaart.
+  Map<Contact, LatLng> plekken = {};
+  for (int i = 0; i < contacten.length; i++) {
+    if (verschoven[i]) {
+      plekken[contacten[i]] = naarPlaats(punten[i]);
+    } else {
+      plekken[contacten[i]] = contacten[i].plaats; // niet verschoven: gewoon op het adres
     }
   }
-  return groepjes;
-}
-
-// Het midden van een groepje contacten.
-LatLng middenVan(List<Contact> groepje) {
-  double breedte = 0;
-  double lengte = 0;
-  for (Contact contact in groepje) {
-    breedte += contact.plaats.latitude;
-    lengte += contact.plaats.longitude;
-  }
-  return LatLng(breedte / groepje.length, lengte / groepje.length);
+  return plekken;
 }
 
 // Maakt van een rechte lijn een boog.

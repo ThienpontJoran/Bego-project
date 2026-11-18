@@ -10,6 +10,7 @@ import 'package:bego_netwerkkaart/models/bezoek.dart';
 import 'package:bego_netwerkkaart/models/contact.dart';
 import 'package:bego_netwerkkaart/models/keten.dart';
 import 'package:bego_netwerkkaart/models/relatie.dart';
+import 'package:bego_netwerkkaart/onderdelen/kaart.dart';
 import 'package:bego_netwerkkaart/onderdelen/kaart_rekenen.dart';
 import 'package:bego_netwerkkaart/schermen/hoofdscherm.dart';
 import 'package:bego_netwerkkaart/services/adres_zoeker.dart';
@@ -162,6 +163,12 @@ void main() {
     MapController controller = tester.widget<FlutterMap>(find.byType(FlutterMap)).mapController!;
     Offset kaartHoek = tester.getTopLeft(find.byType(FlutterMap));
     Map<Relatie, double> bochten = bochtenVoor(opslag.relaties);
+    Map<Contact, LatLng> plekken = uitgewaaierdePlekken(
+      opslag.contacten,
+      controller.camera.projectAtZoom,
+      controller.camera.unprojectAtZoom,
+      Kaart.uitwaaierAfstand,
+    );
     Offset? midden;
     double langste = 0;
     for (Relatie relatie in opslag.relaties) {
@@ -169,7 +176,7 @@ void main() {
       Offset b = controller.camera.latLngToScreenOffset(relatie.tweede.plaats);
       if ((a - b).distance > langste) {
         langste = (a - b).distance;
-        List<LatLng> punten = boog(relatie.eerste.plaats, relatie.tweede.plaats, bochten[relatie]!);
+        List<LatLng> punten = boog(plekken[relatie.eerste]!, plekken[relatie.tweede]!, bochten[relatie]!);
         midden = kaartHoek + controller.camera.latLngToScreenOffset(punten[7]);
       }
     }

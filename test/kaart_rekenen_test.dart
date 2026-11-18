@@ -1,4 +1,4 @@
-// Tests voor het rekenwerk van de kaart (groepjes en bogen).
+// Tests voor het rekenwerk van de kaart (uitwaaieren en bogen).
 
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,16 +20,33 @@ Contact maakContact(String naam, double breedte, double lengte) {
 
 // Doet alsof 1 graad = 1000 pixels, zodat de test niet van de kaart afhangt.
 Offset naarPixels(LatLng plaats) => Offset(plaats.longitude * 1000, plaats.latitude * 1000);
+LatLng naarPlaats(Offset punt) => LatLng(punt.dy / 1000, punt.dx / 1000);
 
 void main() {
-  test('contacten dicht bij elkaar komen in één groepje', () {
+  test('contacten op hetzelfde adres worden uit elkaar gezet', () {
     Contact a = maakContact('A', 50.000, 3.000);
-    Contact b = maakContact('B', 50.000, 3.010); // 10 pixels verder
-    Contact c = maakContact('C', 51.000, 3.000); // 1000 pixels verder
-    List<List<Contact>> groepjes = groepeer([a, b, c], naarPixels, 30);
-    expect(groepjes.length, 2);
-    expect(groepjes[0], [a, b]);
-    expect(groepjes[1], [c]);
+    Contact b = maakContact('B', 50.000, 3.000); // zelfde adres als A
+    Contact c = maakContact('C', 51.000, 3.000); // ver weg
+    Map<Contact, LatLng> plekken = uitgewaaierdePlekken([a, b, c], naarPixels, naarPlaats, 30);
+    // A en B staan nu (bijna) 30 pixels uit elkaar.
+    double afstand = (naarPixels(plekken[a]!) - naarPixels(plekken[b]!)).distance;
+    expect(afstand, closeTo(30, 0.01));
+    // C ligt alleen en blijft gewoon op zijn adres.
+    expect(plekken[c], c.plaats);
+  });
+
+  test('een rij icoontjes vlak bij elkaar overlapt daarna nergens meer', () {
+    List<Contact> rij = [];
+    for (int i = 0; i < 8; i++) {
+      rij.add(maakContact('$i', 50.000, 3.000 + i * 0.005)); // telkens 5 pixels verder
+    }
+    Map<Contact, LatLng> plekken = uitgewaaierdePlekken(rij, naarPixels, naarPlaats, 30);
+    for (int i = 0; i < rij.length; i++) {
+      for (int j = i + 1; j < rij.length; j++) {
+        double afstand = (naarPixels(plekken[rij[i]]!) - naarPixels(plekken[rij[j]]!)).distance;
+        expect(afstand, greaterThan(29));
+      }
+    }
   });
 
   test('een boog begint en eindigt op de contacten en wijkt in het midden af', () {
