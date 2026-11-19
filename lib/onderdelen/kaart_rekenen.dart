@@ -107,15 +107,14 @@ Map<Relatie, double> bochtenVoor(List<Relatie> relaties) {
     buren[sleutel]!.add(relatie);
   }
 
-  // Stap 2: binnen elk groepje de bochten verdelen, bv. bij 3 lijnen: -0.45, 0, 0.45.
+  // Stap 2: de eerste lijn van een groepje blijft recht, de volgende buigen
+  // om de beurt naar links en rechts, telkens wat verder: 0, 0.25, -0.25, 0.5, -0.5, ...
   Map<Relatie, double> bochten = {};
   for (List<Relatie> groepje in buren.values) {
-    if (groepje.length == 1) {
-      bochten[groepje.first] = 0.2; // één lijn: een duidelijke boog
-      continue;
-    }
     for (int i = 0; i < groepje.length; i++) {
-      double bocht = -0.45 + 0.9 * i / (groepje.length - 1);
+      int stap = (i + 1) ~/ 2; // 0, 1, 1, 2, 2, 3, ...
+      double kant = i.isOdd ? 1 : -1;
+      double bocht = 0.25 * stap * kant;
       Relatie relatie = groepje[i];
       // Alle lijnen in een groepje moeten in dezelfde richting "gelezen" worden,
       // anders buigt een omgekeerde lijn net naar de verkeerde kant.

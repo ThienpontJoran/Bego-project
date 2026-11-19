@@ -59,6 +59,13 @@ void main() {
     expect((punten[10].latitude - 50.8).abs(), greaterThan(0.01));
   });
 
+  test('een lijn die alleen loopt blijft recht', () {
+    Contact a = maakContact('A', 50.800, 3.600);
+    Contact z = maakContact('Z', 51.000, 4.000);
+    Relatie relatie = Relatie(a, z);
+    expect(bochtenVoor([relatie])[relatie], 0);
+  });
+
   test('twee lijnen naar dezelfde plek krijgen een andere bocht', () {
     Contact a = maakContact('A', 50.800, 3.600);
     Contact b = maakContact('B', 50.801, 3.601); // vlak naast A
