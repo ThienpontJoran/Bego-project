@@ -53,4 +53,11 @@ const List<Color> lijnKleuren = [
   Color(0xFF00897B), // blauwgroen
   Color(0xFF6D4C41), // bruin
   Color(0xFF212121), // zwart
+  Color(0xFF4FC3F7), // lichtblauw
+  Color(0xFF1A237E), // donkerblauw
+  Color(0xFF26C6DA), // turkoois
+  Color(0xFFCE93D8), // lila
+  Color(0xFF4A148C), // donkerpaars
+  Color(0xFFF06292), // lichtroze
+  Color(0xFFFDD835), // geel
 ];

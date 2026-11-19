@@ -107,15 +107,15 @@ Map<Relatie, double> bochtenVoor(List<Relatie> relaties) {
     buren[sleutel]!.add(relatie);
   }
 
-  // Stap 2: binnen elk groepje de bochten verdelen, bv. bij 3 lijnen: -0.25, 0, 0.25.
+  // Stap 2: binnen elk groepje de bochten verdelen, bv. bij 3 lijnen: -0.45, 0, 0.45.
   Map<Relatie, double> bochten = {};
   for (List<Relatie> groepje in buren.values) {
     if (groepje.length == 1) {
-      bochten[groepje.first] = 0.12; // één lijn: een lichte boog
+      bochten[groepje.first] = 0.2; // één lijn: een duidelijke boog
       continue;
     }
     for (int i = 0; i < groepje.length; i++) {
-      double bocht = -0.25 + 0.5 * i / (groepje.length - 1);
+      double bocht = -0.45 + 0.9 * i / (groepje.length - 1);
       Relatie relatie = groepje[i];
       // Alle lijnen in een groepje moeten in dezelfde richting "gelezen" worden,
       // anders buigt een omgekeerde lijn net naar de verkeerde kant.
@@ -126,10 +126,10 @@ Map<Relatie, double> bochtenVoor(List<Relatie> relaties) {
   return bochten;
 }
 
-// Afgeronde plek (ongeveer 2 km), zodat contacten vlak bij elkaar dezelfde plek krijgen.
+// Afgeronde plek (ongeveer 5 km), zodat contacten in de buurt van elkaar dezelfde plek krijgen.
 String afgerondePlek(LatLng plaats) {
-  int breedte = (plaats.latitude * 50).round();
-  int lengte = (plaats.longitude * 50).round();
+  int breedte = (plaats.latitude * 20).round();
+  int lengte = (plaats.longitude * 20).round();
   return '$breedte,$lengte';
 }
 
