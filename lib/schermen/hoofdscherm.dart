@@ -9,6 +9,8 @@ import 'package:latlong2/latlong.dart';
 import '../models/contact.dart';
 import '../models/filters.dart';
 import '../models/keten.dart';
+import '../services/download/download.dart';
+import '../services/excel_bestand.dart';
 import '../services/inlog_service.dart';
 import '../services/opslag.dart';
 import '../onderdelen/contactenlijst.dart';
@@ -69,6 +71,19 @@ class _HoofdschermState extends State<Hoofdscherm> {
 
   Widget uitlogKnop() {
     return IconButton(tooltip: 'Uitloggen', onPressed: uitloggen, icon: const Icon(Icons.logout));
+  }
+
+  // Alle contacten en relaties downloaden als Excel-bestand, bv. "bego_netwerkkaart_2026-11-20.xlsx".
+  void downloadExcel() {
+    DateTime nu = DateTime.now();
+    String maand = nu.month.toString().padLeft(2, '0');
+    String dag = nu.day.toString().padLeft(2, '0');
+    List<int> inhoud = maakExcel(opslag.contacten, opslag.relaties);
+    downloadBestand(inhoud, 'bego_netwerkkaart_${nu.year}-$maand-$dag.xlsx');
+  }
+
+  Widget excelKnop() {
+    return IconButton(tooltip: 'Download als Excel', onPressed: downloadExcel, icon: const Icon(Icons.download));
   }
 
   bool isBreed() {
@@ -260,6 +275,7 @@ class _HoofdschermState extends State<Hoofdscherm> {
           Expanded(
             child: Text('${opslag.contacten.length} contacten', style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
+          excelKnop(),
           uitlogKnop(),
         ]),
       ),
@@ -327,6 +343,7 @@ class _HoofdschermState extends State<Hoofdscherm> {
             ]),
           ),
           FilledButton.icon(onPressed: nieuwContact, icon: const Icon(Icons.add), label: const Text('Nieuw')),
+          excelKnop(),
           uitlogKnop(),
         ]),
       ),
